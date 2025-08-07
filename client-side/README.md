@@ -11,6 +11,28 @@ Currently, two official plugins are available:
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 
+## Prerequisites
+
+Before running this project, make sure you have the following installed:
+
+### Required Software
+
+1. **Node.js** (version 18.0.0 or higher)
+   - Download from [nodejs.org](https://nodejs.org/)
+   - Verify installation: `node --version`
+
+2. **npm** (version 9.0.0 or higher)
+   - Usually comes with Node.js
+   - Verify installation: `npm --version`
+
+### Development Tools
+
+1. **Visual Studio Code**
+   - Recommended extensions:
+     - ES7+ React/Redux/React-Native snippets
+     - Prettier - Code formatter
+     - ESLint
+
 ## How to Run the Project
 
 1. Open a terminal and navigate to the `client-side` directory:

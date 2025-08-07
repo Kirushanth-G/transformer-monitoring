@@ -10,3 +10,24 @@ Currently, two official plugins are available:
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## How to Run the Project
+
+1. Open a terminal and navigate to the `client-side` directory:
+
+   ```bash
+   cd client-side
+   ```
+
+2. Install node modules
+
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+This will launch the app in development mode. You can view it in your browser at the address provided in the terminal output.

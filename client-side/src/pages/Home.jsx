@@ -43,7 +43,7 @@ function Home() {
   ];
 
   return (
-    <div className="min-h-screen p-8 bg-[#E5E4E2] bg-[radial-gradient(#b4b4b4_1px,transparent_1px),radial-gradient(#b4b4b4_1px,transparent_1px)] bg-[length:20px_20px] bg-[0_0,10px_10px]">
+    <div className="min-h-screen p-8 bg-[#E5E4E2] bg-[length:20px_20px] bg-[0_0,10px_10px]">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-5">
         {transformers.map((transformer, index) => (
           <div key={index} className="bg-[#F5F5F5] rounded-lg shadow-md p-4 transition-all duration-200 hover:translate-y-[-3px] hover:shadow-lg mb-5">

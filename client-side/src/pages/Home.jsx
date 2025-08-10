@@ -9,39 +9,44 @@ function Home() {
       id: "210019E",
       name: "Optimus Prime",
       location: "Vavuniya",
-      image: OptimusPrime
+      image: OptimusPrime,
+      mapUrl: "https://www.google.com/maps/place/Vavuniya"
     },
     {
       id: "210292G",
       name: "BumbleBee",
       location: "Point-Pedro",
-      image: BumbleBee
+      image: BumbleBee,
+      mapUrl: "https://www.google.com/maps/place/Point+Pedro"
     },
     {
       id: "210498T",
       name: "Megatron",
       location: "Batticaloa",
-      image: Megatron
+      image: Megatron,
+      mapUrl: "https://www.google.com/maps/place/Batticaloa"
     },
     {
-      id: "210567K", // Changed ID to be unique
+      id: "210567K",
       name: "Optimus Prime",
       location: "Jaffna",
-      image: OptimusPrime
+      image: OptimusPrime,
+      mapUrl: "https://www.google.com/maps/place/Jaffna"
     },
     {
-      id: "210683L", // Changed ID to be unique
+      id: "210683L",
       name: "BumbleBee",
       location: "Mannar",
-      image: BumbleBee
+      image: BumbleBee,
+      mapUrl: "https://www.google.com/maps/place/Mannar"
     }
   ];
 
   return (
     <div className="min-h-screen p-8 bg-gray-100 bg-[radial-gradient(#b4b4b4_1px,transparent_1px),radial-gradient(#b4b4b4_1px,transparent_1px)] bg-[length:20px_20px] bg-[0_0,10px_10px]">
-      <div className="flex flex-wrap gap-5 mt-5">
+      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-5">
         {transformers.map((transformer, index) => (
-          <div key={index} className="w-[calc(33.33%-14px)] lg:w-[calc(33.33%-14px)] md:w-[calc(50%-10px)] sm:w-full bg-white rounded-lg shadow-md p-5 transition-all duration-200 hover:translate-y-[-3px] hover:shadow-lg mb-5">
+          <div key={index} className="bg-white rounded-lg shadow-md p-5 transition-all duration-200 hover:translate-y-[-3px] hover:shadow-lg mb-5">
             <img 
               src={transformer.image} 
               alt={transformer.name}
@@ -49,7 +54,28 @@ function Home() {
             />
             <h2 className="text-lg font-bold text-gray-800 ml-6">{transformer.name}</h2>
             <p className="text-center text-gray-700 mb-4">Transformer ID: {transformer.id}</p>
-            <p className="text-center text-gray-700 mb-4">Location: {transformer.location}</p>
+            <div className="text-center text-gray-700 mb-4">
+              <span>Location: {transformer.location}</span>
+              <a 
+                href={transformer.mapUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="ml-2 text-blue-500 hover:text-blue-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="underline ml-1">View on Map</span>
+              </a>
+            </div>
+            
+            {/* Additional button to view transformer details */}
+            <div className="text-center mt-4">
+              <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                View Details
+              </button>
+            </div>
           </div>
         ))}
       </div>

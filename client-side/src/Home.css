@@ -22,6 +22,20 @@ body, html {
   margin: 20px 0;
 }
 
+.transformer-container h2{
+    color: #333;
+  /* bold text for h2 */
+    font-weight: bold;
+    font-size: large;
+    margin-left: 25px;
+}
+.transformer-container p {
+  text-align: center;
+  color: #333;
+  /* font-weight: bold; */
+  margin-bottom: 15px;
+}
+
 .transformer-box {
   flex: 0 0 calc(33.33% - 14px); /* Fixed width for 3 boxes per row with gap considered */
   background-color: white;

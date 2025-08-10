@@ -15,50 +15,45 @@ function Home() {
             {/* Transformer Image */}
             <img src= {OptimusPrime} alt="Optimus-prime" />
             {/* Transformer details */}
-            <h2>Transformer 1</h2>
-            <p>Status: Active</p>
-            <p>Temperature: 75°C</p>
-            <p>Voltage: 220V</p>
+            <h2>Optimus prime</h2>
+            <p>Transformer ID: 210019E</p>
+            <p>Location: Vavuniya</p>
         </div>
         <div className="transformer-box">
             {/* Second transformer box content */}
             {/* Transformer Image */}
             <img src= {BumbleBee} alt="Bumblebee" />
             {/* Transformer details */}
-            <h2>Transformer 2</h2>
-            <p>Status: Inactive</p>
-            <p>Temperature: 60°C</p>
-            <p>Voltage: 210V</p>
+            <h2>BumbleBee</h2>
+            <p>Transformer ID: 210292G</p>
+            <p>Location: point-pedro</p>
         </div>
         <div className="transformer-box">
             {/* Third transformer box content */}
             {/* Transformer Image */}
             <img src= {Megatron} alt="Megatron" />
             {/* Transformer details */}
-            <h2>Transformer 3</h2>
-            <p>Status: Active</p>
-            <p>Temperature: 80°C</p>
-            <p>Voltage: 230V</p>
+            <h2>Megatron</h2>
+            <p>Transformer ID: 210498T</p>
+            <p>Location: Batticalo</p>
         </div>
         <div className="transformer-box">
             {/* First transformer box content */}
             {/* Transformer Image */}
             <img src= {OptimusPrime} alt="Optimus-prime" />
             {/* Transformer details */}
-            <h2>Transformer 1</h2>
-            <p>Status: Active</p>
-            <p>Temperature: 75°C</p>
-            <p>Voltage: 220V</p>
+            <h2>Optimus prime</h2>
+            <p>Transformer ID: 210019E</p>
+            <p>Location: Vavuniya</p>
         </div>
         <div className="transformer-box">
             {/* Second transformer box content */}
             {/* Transformer Image */}
             <img src= {BumbleBee} alt="Bumblebee" />
             {/* Transformer details */}
-            <h2>Transformer 2</h2>
-            <p>Status: Inactive</p>
-            <p>Temperature: 60°C</p>
-            <p>Voltage: 210V</p>
+            <h2>BumbleBee</h2>
+            <p>Transformer ID: 210292G</p>
+            <p>Location: point-pedro</p>
         </div>
       </div>
     </div>

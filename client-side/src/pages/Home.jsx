@@ -43,14 +43,14 @@ function Home() {
   ];
 
   return (
-    <div className="min-h-screen p-8 bg-gray-100 bg-[radial-gradient(#b4b4b4_1px,transparent_1px),radial-gradient(#b4b4b4_1px,transparent_1px)] bg-[length:20px_20px] bg-[0_0,10px_10px]">
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-5">
+    <div className="min-h-screen p-8 bg-[#E5E4E2] bg-[radial-gradient(#b4b4b4_1px,transparent_1px),radial-gradient(#b4b4b4_1px,transparent_1px)] bg-[length:20px_20px] bg-[0_0,10px_10px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-5">
         {transformers.map((transformer, index) => (
-          <div key={index} className="bg-[#F5F5F5] rounded-lg shadow-md p-5 transition-all duration-200 hover:translate-y-[-3px] hover:shadow-lg mb-5">
+          <div key={index} className="bg-[#F5F5F5] rounded-lg shadow-md p-4 transition-all duration-200 hover:translate-y-[-3px] hover:shadow-lg mb-5">
             <img 
               src={transformer.image} 
               alt={transformer.name}
-              className="w-[90%] h-[300px] object-cover rounded-md mx-auto mb-4" 
+              className="w-[90%] h-[250px] object-cover rounded-md mx-auto mb-4 shadow-[0_4px_8px_rgba(0,0,0,0.2)]" 
             />
             <h2 className="text-lg font-bold text-[#36454F] ml-6">{transformer.name}</h2>
             <p className="text-center text-gray-700 mb-4">Transformer ID: {transformer.id}</p>
@@ -70,7 +70,6 @@ function Home() {
               </a>
             </div>
             
-            {/* Additional button to view transformer details */}
             <div className="text-center mt-4">
               <button className="bg-[#B0E0E6] hover:bg-[#B0CFDE] text-[#566D7E] font-bold py-2 px-4 rounded">
                 View Details

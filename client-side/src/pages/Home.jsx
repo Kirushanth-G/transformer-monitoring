@@ -75,6 +75,7 @@ function Home() {
               <th className="px-6 py-3 text-left font-bold">Location</th>
               <th className="px-6 py-3 text-left font-bold">Type</th>
               <th className="px-6 py-3 text-center font-bold">Action</th>
+              <th className="px-3 py-3 text-center font-bold w-12"> </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -127,6 +128,13 @@ function Home() {
                 <td className="px-6 py-4 text-center">
                   <button className="bg-[#B0E0E6] hover:bg-[#B0CFDE] text-[#566D7E] font-bold py-1 px-3 rounded">
                     View
+                  </button>
+                </td>
+                <td className="px-3 py-4 text-center">
+                  <button className="text-gray-500 hover:text-gray-700 focus:outline-none rounded-full p-1 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                    </svg>
                   </button>
                 </td>
               </tr>

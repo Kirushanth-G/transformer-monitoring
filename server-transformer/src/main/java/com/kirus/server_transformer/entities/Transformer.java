@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -15,10 +18,27 @@ import lombok.Setter;
 public class Transformer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", columnDefinition = "serial")
-    private String id;
+    @Column(name = "id")
+    private Long id;
 
-    private String name;
-    private String description;
-    private String imageUrl;
+    @Column(name = "transformer_id", unique = true, length = 50)
+    private String transformerId;
+
+    @Column(name = "location")
+    private String location;
+
+    @Column(name = "capacity_kva", nullable = false)
+    private Integer capacityKva;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false, length = 20)
+    private String type; // Should be 'Bulk' or 'Distribution'
+
+    @Column(name = "pole_no", length = 50)
+    private String poleNo;
+
+    @OneToMany(mappedBy = "transformer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Image> images;
 }

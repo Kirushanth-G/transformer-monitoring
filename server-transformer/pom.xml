@@ -99,9 +99,9 @@
 				<groupId>org.flywaydb</groupId>
 				<artifactId>flyway-maven-plugin</artifactId>
 				<configuration>
-					<url>jdbc:postgresql://crossover.proxy.rlwy.net:40950/railway</url>
+					<url>jdbc:postgresql://trolley.proxy.rlwy.net:55929/railway</url>
 					<user>postgres</user>
-					<password>aSkqPvKeLgJXoVDcgpyVxpLVbCmMsjAR</password>
+					<password>cFsUsuPmwyqgYtFreXfRjtoOxZVDRACs</password>
 					<cleanDisabled>false</cleanDisabled>
 					<schemas>
 						<schema>public</schema>

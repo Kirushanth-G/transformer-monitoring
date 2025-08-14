@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,10 +28,8 @@ public class Transformer {
     @Column(name = "location")
     private String location;
 
-    @Column(name = "capacity_kva", nullable = false)
-    private Integer capacityKva;
-
-    @Column(name = "created_at")
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false, length = 20)

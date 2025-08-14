@@ -1,0 +1,1 @@
+ALTER TABLE transformers DROP COLUMN capacity_kva;

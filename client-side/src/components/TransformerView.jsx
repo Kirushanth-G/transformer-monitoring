@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 function TransformerView({
   transformers,
@@ -16,6 +16,10 @@ function TransformerView({
   setTypeFilter,
   resetFilters
 }) {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Extract unique locations and types for dropdowns
   const locations = ['All Regions', ...new Set(transformers.map(t => t.location))];
   const types = ['All Types', ...new Set(transformers.map(t => t.type))];
@@ -38,6 +42,28 @@ function TransformerView({
     
     return searchMatch && favoriteMatch && locationMatch && typeMatch;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredTransformers.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredTransformers.slice(indexOfFirstItem, indexOfLastItem);
+  
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, showFavoritesOnly, locationFilter, typeFilter]);
+
+  // Page change handler
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Generate page numbers for pagination
+  const pageNumbers = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
 
   return (
     <>
@@ -139,7 +165,7 @@ function TransformerView({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredTransformers.map((transformer, index) => (
+            {currentItems.map((transformer, index) => (
               <tr 
                 key={index} 
                 className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-150`}
@@ -201,6 +227,69 @@ function TransformerView({
             ))}
           </tbody>
         </table>
+        
+        {/* Pagination Controls */}
+        <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
+          <div className="text-sm text-gray-700">
+            Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{" "}
+            <span className="font-medium">
+              {Math.min(indexOfLastItem, filteredTransformers.length)}
+            </span>{" "}
+            of <span className="font-medium">{filteredTransformers.length}</span> transformers
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className={`px-2 py-1 border rounded-md ${
+                currentPage === 1
+                  ? "text-gray-300 border-gray-200 cursor-not-allowed"
+                  : "text-gray-600 border-gray-300 hover:bg-gray-100"
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+            
+            {/* Page Numbers */}
+            <div className="hidden md:flex space-x-1">
+              {pageNumbers.map((pageNumber) => (
+                <button
+                  key={pageNumber}
+                  onClick={() => handlePageChange(pageNumber)}
+                  className={`px-3 py-1 border ${
+                    currentPage === pageNumber
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "text-gray-600 hover:bg-gray-100 border-gray-300"
+                  } rounded-md`}
+                >
+                  {pageNumber}
+                </button>
+              ))}
+            </div>
+            
+            {/* Mobile Page Indicator */}
+            <span className="md:hidden text-sm text-gray-700">
+              Page {currentPage} of {totalPages}
+            </span>
+            
+            <button
+              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className={`px-2 py-1 border rounded-md ${
+                currentPage === totalPages || totalPages === 0
+                  ? "text-gray-300 border-gray-200 cursor-not-allowed"
+                  : "text-gray-600 border-gray-300 hover:bg-gray-100"
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     </>
   );

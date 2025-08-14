@@ -6,7 +6,8 @@ import Megatron from '../assets/pictures/megatron.jpg';
 import TransformerView from '../components/TransformerView';
 import InspectionView from '../components/InspectionView';
 
-function Home() {
+// Update the function signature to accept props
+function Home({ activeView, setActiveView }) {
   const [favorites, setFavorites] = useState([]);
   const [inspectionFavorites, setInspectionFavorites] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,7 +15,6 @@ function Home() {
   const [locationFilter, setLocationFilter] = useState('All Regions');
   const [typeFilter, setTypeFilter] = useState('All Types');
   const [searchField, setSearchField] = useState('id');
-  const [activeView, setActiveView] = useState('transformers');
   
   const toggleFavorite = (id) => {
     if (favorites.includes(id)) {
@@ -143,13 +143,22 @@ function Home() {
     <div className="min-h-screen p-8 bg-[#E5E4E2]">
       {/* Header with Add Button and View Toggle */}
       <div className="flex justify-between items-center mb-6">
-        {/* Add Transformer Button */}
-        <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-          </svg>
-          Add Transformer
-        </button>
+        {/* Conditional Add Button based on active view */}
+        {activeView === 'transformers' ? (
+          <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Add Transformer
+          </button>
+        ) : (
+          <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Add Inspection
+          </button>
+        )}
         
         {/* View Toggle Button */}
         <div className="bg-gray-200 rounded-lg inline-flex overflow-hidden">

@@ -1,5 +1,5 @@
 // filepath: d:\semi 7\Software design project\WebApp repo\transformer-monitoring\client-side\src\components\InspectionView.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 function InspectionView({ inspections, favorites, toggleFavorite }) {
   // Local filter state
@@ -7,6 +7,10 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
   const [searchField, setSearchField] = useState('inspectionId');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All Status');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Status color mapping
   const getStatusColor = (status) => {
@@ -52,6 +56,28 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
       return searchMatch && favoriteMatch && statusMatch;
     });
   }, [inspections, searchTerm, searchField, showFavoritesOnly, favorites, statusFilter]);
+  
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredInspections.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredInspections.slice(indexOfFirstItem, indexOfLastItem);
+  
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, showFavoritesOnly, statusFilter]);
+
+  // Page change handler
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Generate page numbers for pagination
+  const pageNumbers = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
 
   return (
     <div>
@@ -141,7 +167,7 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredInspections.map((inspection, index) => (
+            {currentItems.map((inspection, index) => (
               <tr 
                 key={index} 
                 className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-150`}
@@ -192,6 +218,69 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
             ))}
           </tbody>
         </table>
+        
+        {/* Pagination Controls */}
+        <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
+          <div className="text-sm text-gray-700">
+            Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{" "}
+            <span className="font-medium">
+              {Math.min(indexOfLastItem, filteredInspections.length)}
+            </span>{" "}
+            of <span className="font-medium">{filteredInspections.length}</span> inspections
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className={`px-2 py-1 border rounded-md ${
+                currentPage === 1
+                  ? "text-gray-300 border-gray-200 cursor-not-allowed"
+                  : "text-gray-600 border-gray-300 hover:bg-gray-100"
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+            
+            {/* Page Numbers */}
+            <div className="hidden md:flex space-x-1">
+              {pageNumbers.map((pageNumber) => (
+                <button
+                  key={pageNumber}
+                  onClick={() => handlePageChange(pageNumber)}
+                  className={`px-3 py-1 border ${
+                    currentPage === pageNumber
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "text-gray-600 hover:bg-gray-100 border-gray-300"
+                  } rounded-md`}
+                >
+                  {pageNumber}
+                </button>
+              ))}
+            </div>
+            
+            {/* Mobile Page Indicator */}
+            <span className="md:hidden text-sm text-gray-700">
+              Page {currentPage} of {totalPages}
+            </span>
+            
+            <button
+              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className={`px-2 py-1 border rounded-md ${
+                currentPage === totalPages || totalPages === 0
+                  ? "text-gray-300 border-gray-200 cursor-not-allowed"
+                  : "text-gray-600 border-gray-300 hover:bg-gray-100"
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

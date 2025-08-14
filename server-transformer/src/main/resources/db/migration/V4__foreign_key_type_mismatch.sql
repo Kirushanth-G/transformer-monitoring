@@ -1,0 +1,1 @@
+ALTER TABLE images ALTER COLUMN transformer_id TYPE BIGINT;

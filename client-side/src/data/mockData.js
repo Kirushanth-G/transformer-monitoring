@@ -1,0 +1,86 @@
+// Mock data for development when API is not available
+export const mockTransformers = [
+  {
+    id: '210019E',
+    name: 'Optimus Prime',
+    location: 'Vavuniya',
+    poleNo: 'P-1024',
+    type: 'Bulk',
+    mapUrl: 'https://www.google.com/maps/place/Vavuniya',
+  },
+  {
+    id: '210292G',
+    name: 'BumbleBee',
+    location: 'Point-Pedro',
+    poleNo: 'P-3856',
+    type: 'Distribution',
+    mapUrl: 'https://www.google.com/maps/place/Point+Pedro',
+  },
+  {
+    id: '210498T',
+    name: 'Megatron',
+    location: 'Batticaloa',
+    poleNo: 'P-5432',
+    type: 'Bulk',
+    mapUrl: 'https://www.google.com/maps/place/Batticaloa',
+  },
+  {
+    id: '210567K',
+    name: 'Starscream',
+    location: 'Jaffna',
+    poleNo: 'P-7891',
+    type: 'Distribution',
+    mapUrl: 'https://www.google.com/maps/place/Jaffna',
+  },
+  {
+    id: '210683L',
+    name: 'Ironhide',
+    location: 'Mannar',
+    poleNo: 'P-2468',
+    type: 'Distribution',
+    mapUrl: 'https://www.google.com/maps/place/Mannar',
+  },
+];
+
+export const mockInspections = [
+  {
+    transformerId: '210019E',
+    transformerName: 'Optimus Prime',
+    inspectionId: 'INS-2023-001',
+    inspectedDate: '2023-04-15',
+    maintenanceDate: '2023-05-20',
+    status: 'Completed',
+  },
+  {
+    transformerId: '210292G',
+    transformerName: 'BumbleBee',
+    inspectionId: 'INS-2023-002',
+    inspectedDate: '2023-06-10',
+    maintenanceDate: '2023-06-25',
+    status: 'In Progress',
+  },
+  {
+    transformerId: '210498T',
+    transformerName: 'Megatron',
+    inspectionId: 'INS-2023-003',
+    inspectedDate: '2023-07-05',
+    maintenanceDate: '2023-08-15',
+    status: 'Pending',
+  },
+  {
+    transformerId: '210567K',
+    transformerName: 'Starscream',
+    inspectionId: 'INS-2023-004',
+    inspectedDate: '2023-08-20',
+    maintenanceDate: '2023-09-10',
+    status: 'Completed',
+  },
+  {
+    transformerId: '210683L',
+    transformerName: 'Ironhide',
+    inspectionId: 'INS-2023-005',
+    inspectedDate: '2023-09-01',
+    maintenanceDate: '2023-09-30',
+    status: 'In Progress',
+  },
+];

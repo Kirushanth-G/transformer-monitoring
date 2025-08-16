@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @AllArgsConstructor
 @RestController
 @RequestMapping("/transformers")
@@ -19,8 +20,11 @@ public class TransformerController {
     private final TransformerMapper transformerMapper;
 
     @GetMapping
-    public List<Transformer> getAllTransformers() {
-        return transformerRepository.findAll();
+    public List<TransformerDto> getAllTransformers() {
+        List<Transformer> transformers = transformerRepository.findAll();
+        return transformers.stream()
+                .map(transformerMapper::toDto)
+                .toList();
     }
 
     @GetMapping("/{id}")

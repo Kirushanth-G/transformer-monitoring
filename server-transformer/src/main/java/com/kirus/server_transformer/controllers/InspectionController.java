@@ -1,6 +1,7 @@
 package com.kirus.server_transformer.controllers;
 
 import com.kirus.server_transformer.dtos.InspectionCreateRequest;
+import com.kirus.server_transformer.dtos.InspectionDto;
 import com.kirus.server_transformer.entities.Inspection;
 import com.kirus.server_transformer.entities.Transformer;
 import com.kirus.server_transformer.mappers.InspectionMapper;
@@ -11,8 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @AllArgsConstructor
 @RestController
 @RequestMapping("/inspections")
@@ -23,8 +24,11 @@ public class InspectionController {
     private final TransformerRepository transformerRepository;
 
     @GetMapping
-    public List<Inspection> getAllInspections() {
-        return inspectionRepository.findAll();
+    public List<InspectionDto> getAllInspections() {
+        List<Inspection> inspections = inspectionRepository.findAll();
+        return inspections.stream()
+                .map(inspectionMapper::toDto)
+                .toList();
     }
 
     @PostMapping

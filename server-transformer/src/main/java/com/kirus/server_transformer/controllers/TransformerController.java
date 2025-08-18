@@ -28,20 +28,24 @@ public class TransformerController {
     }
 
     @GetMapping("/{id}")
-    public Transformer getTransformerById(@PathVariable Long id) {
-        return transformerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transformer not found with id: " + id));
+    public ResponseEntity<TransformerDto> getTransformerById(@PathVariable Long id) {
+        Transformer transformer = transformerRepository.findById(id).orElse(null);
+        if (transformer == null) {
+            return ResponseEntity.notFound().build();
+        }
+        TransformerDto transformerDto = transformerMapper.toDto(transformer);
+        return ResponseEntity.ok(transformerDto);
     }
 
     @PostMapping
-    public Transformer createTransformer(@RequestBody TransformerDto request) {
+    public TransformerDto createTransformer(@RequestBody TransformerDto request) {
         Transformer transformer = transformerMapper.toEntity(request);
-        transformerRepository.save(transformer);
-        return transformer;
+        Transformer saved = transformerRepository.save(transformer);
+        return transformerMapper.toDto(saved);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Transformer> updateTransformer(@PathVariable Long id, @RequestBody TransformerDto request) {
+    public ResponseEntity<TransformerDto> updateTransformer(@PathVariable Long id, @RequestBody TransformerDto request) {
         Transformer existingTransformer = transformerRepository.findById(id).orElse(null);
         if (existingTransformer == null) {
             return ResponseEntity.notFound().build();
@@ -49,8 +53,8 @@ public class TransformerController {
 
         Transformer updatedTransformer = transformerMapper.toEntity(request);
         updatedTransformer.setId(existingTransformer.getId());
-        transformerRepository.save(updatedTransformer);
-        return ResponseEntity.ok(updatedTransformer);
+        Transformer saved = transformerRepository.save(updatedTransformer);
+        return ResponseEntity.ok(transformerMapper.toDto(saved));
     }
 
     @DeleteMapping("/{id}")

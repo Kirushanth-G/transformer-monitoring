@@ -32,6 +32,23 @@ export const mockTransformers = [
     type: 'Distribution',
     mapUrl: 'https://www.google.com/maps/place/Jaffna',
   },
+  // Test data with null values
+  {
+    id: '210999X',
+    name: 'Test Transformer',
+    location: null, // This will display as "Null"
+    poleNo: null, // This will display as "Null"
+    type: null, // This will display as "Null"
+    mapUrl: null,
+  },
+  {
+    id: null, // This will display as "Null"
+    name: 'Another Test',
+    location: '', // Empty string will also display as "Null"
+    poleNo: 'P-1111',
+    type: 'Bulk',
+    mapUrl: '',
+  },
   {
     id: '210683L',
     name: 'Ironhide',
@@ -82,5 +99,22 @@ export const mockInspections = [
     inspectedDate: '2023-09-01',
     maintenanceDate: '2023-09-30',
     status: 'In Progress',
+  },
+  // Test data with null values
+  {
+    transformerId: null, // This will display as "Null"
+    transformerName: null, // This will display as "Null"
+    inspectionId: 'INS-2023-006',
+    inspectedDate: null, // This will display as "Null"
+    maintenanceDate: null, // This will display as "Null"
+    status: null, // This will display as "Null"
+  },
+  {
+    transformerId: '210999X',
+    transformerName: '', // Empty string will display as "Null"
+    inspectionId: null, // This will display as "Null"
+    inspectedDate: '2023-10-01',
+    maintenanceDate: '', // Empty string will display as "Null"
+    status: 'Pending',
   },
 ];

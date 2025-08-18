@@ -15,12 +15,11 @@ function App() {
   return (
     <Router>
       <div className='flex h-screen bg-gray-100'>
-        {/* Sidebar Navigation - Always visible */}
+        {/* Always visible */}
         <Sidebar />
 
         {/* Main Content */}
         <div className='ml-64 flex flex-1 flex-col'>
-          {/* Topbar Component */}
           <Topbar />
 
           {/* Main Content Area with Routes */}
@@ -33,7 +32,6 @@ function App() {
               <Route path='/transformers' element={<TransformersPage />} />
               <Route path='/inspections' element={<InspectionsPage />} />
               <Route path='/settings' element={<Settings />} />
-              {/* Catch all route - show 404 */}
               <Route path='*' element={<NotFound />} />
             </Routes>
           </main>

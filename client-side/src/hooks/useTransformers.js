@@ -14,8 +14,9 @@ export const useTransformers = () => {
       if (!Array.isArray(response.data)) {
         throw new Error('API response is not an array');
       }
-      const transformedData = response.data.map((transformer, index) => ({
-        id: transformer.transformerId || transformer.id || `T${index + 1}`,
+      const transformedData = response.data.map(transformer => ({
+        id: transformer.id, // Use the id from API
+        transformerId: transformer.transformerId,
         location: transformer.location || '',
         type: transformer.type || '',
         poleNo: transformer.poleNo || '',

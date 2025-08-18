@@ -17,3 +17,5 @@ export { default as DotsVerticalIcon } from './DotsVerticalIcon';
 // Action icons
 export { default as XIcon } from './XIcon';
 export { default as CheckIcon } from './CheckIcon';
+export { default as TrashIcon } from './TrashIcon';
+export { default as EditIcon } from './EditIcon';

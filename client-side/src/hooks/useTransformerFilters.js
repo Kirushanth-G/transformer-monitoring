@@ -1,12 +1,29 @@
 import { useState, useMemo } from 'react';
 
 export const useTransformerFilters = (transformers, favorites) => {
-  // Filter state
+  // Core filter state - only what you need
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchField, setSearchField] = useState('id'); // 'id' for transformer no (transformerId)
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [locationFilter, setLocationFilter] = useState('All Regions');
-  const [typeFilter, setTypeFilter] = useState('All Types');
-  const [searchField, setSearchField] = useState('id');
+  const [locationFilter, setLocationFilter] = useState('All Regions'); // region
+  const [typeFilter, setTypeFilter] = useState('All Types'); // type
+
+  // Group filters for cleaner usage
+  const filters = {
+    searchTerm,
+    searchField,
+    showFavoritesOnly,
+    locationFilter,
+    typeFilter,
+  };
+
+  const setters = {
+    setSearchTerm,
+    setSearchField,
+    setShowFavoritesOnly,
+    setLocationFilter,
+    setTypeFilter,
+  };
 
   // Reset all filters
   const resetFilters = () => {
@@ -26,11 +43,13 @@ export const useTransformerFilters = (transformers, favorites) => {
   const filterOptions = useMemo(() => {
     const locations = [
       'All Regions',
-      ...new Set(safeTransformers.map(t => t.location).filter(Boolean)),
+      ...new Set(
+        safeTransformers.map(t => t.location || 'Null').filter(Boolean),
+      ),
     ];
     const types = [
       'All Types',
-      ...new Set(safeTransformers.map(t => t.type).filter(Boolean)),
+      ...new Set(safeTransformers.map(t => t.type || 'Null').filter(Boolean)),
     ];
 
     return { locations, types };
@@ -39,26 +58,31 @@ export const useTransformerFilters = (transformers, favorites) => {
   // Apply all filters to transformers
   const filteredTransformers = useMemo(() => {
     return safeTransformers.filter(transformer => {
-      // Search filter - using the selected search field
+      // Search filter - using the selected search field, handle null values
       const searchMatch =
         searchTerm === '' ||
         (searchField === 'id' &&
-          transformer.id?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (transformer.transformerId || '')
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())) ||
         (searchField === 'poleNo' &&
-          transformer.poleNo?.toLowerCase().includes(searchTerm.toLowerCase()));
+          (transformer.poleNo || '')
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()));
 
       // Favorites filter
       const favoriteMatch =
-        !showFavoritesOnly || favorites.includes(transformer.id);
+        !showFavoritesOnly || favorites.includes(transformer.transformerId);
 
-      // Location filter
+      // Location filter (region) - handle null values
       const locationMatch =
         locationFilter === 'All Regions' ||
-        transformer.location === locationFilter;
+        (transformer.location || 'Null') === locationFilter;
 
-      // Type filter
+      // Type filter - handle null values
       const typeMatch =
-        typeFilter === 'All Types' || transformer.type === typeFilter;
+        typeFilter === 'All Types' ||
+        (transformer.type || 'Null') === typeFilter;
 
       return searchMatch && favoriteMatch && locationMatch && typeMatch;
     });
@@ -73,25 +97,10 @@ export const useTransformerFilters = (transformers, favorites) => {
   ]);
 
   return {
-    // Filter state
-    searchTerm,
-    setSearchTerm,
-    showFavoritesOnly,
-    setShowFavoritesOnly,
-    locationFilter,
-    setLocationFilter,
-    typeFilter,
-    setTypeFilter,
-    searchField,
-    setSearchField,
-
-    // Filter options
+    filters,
+    setters,
     filterOptions,
-
-    // Filtered results
     filteredTransformers,
-
-    // Reset function
     resetFilters,
   };
 };

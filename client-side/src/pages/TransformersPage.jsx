@@ -1,30 +1,242 @@
 import TransformerView from '../components/TransformerView';
 import LoadingSpinner from '../components/LoadingSpinner';
+import AddTransformerModal from '../components/AddTransformerModal';
+import EditTransformerModal from '../components/EditTransformerModal';
+import NotificationManager from '../components/NotificationManager';
 import { useTransformers } from '../hooks/useTransformers';
 import { useFavorites } from '../hooks/useFavorites';
 import { useTransformerFilters } from '../hooks/useTransformerFilters';
+import { useNotifications } from '../hooks/useNotifications';
 import { PlusIcon } from '../components/ui/icons';
+import { useState } from 'react';
+import axios from '../api/axiosConfig';
 
 function TransformersPage() {
   const { transformers, loading, error } = useTransformers();
   const { favorites, toggleFavorite } = useFavorites();
+  const { notifications, removeNotification, showSuccess, showError } =
+    useNotifications();
 
-  // Use the filter hook
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedTransformer, setSelectedTransformer] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(null); // Track which transformer is being deleted
+  const [isEditing, setIsEditing] = useState(false); // Track if currently editing
+
+  // Use the filter hook with cleaner destructuring
   const {
-    searchTerm,
-    setSearchTerm,
-    showFavoritesOnly,
-    setShowFavoritesOnly,
-    locationFilter,
-    setLocationFilter,
-    typeFilter,
-    setTypeFilter,
-    searchField,
-    setSearchField,
+    filters,
+    setters,
     filterOptions,
     filteredTransformers,
     resetFilters,
   } = useTransformerFilters(transformers, favorites);
+
+  // Handle opening the modal
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  // Handle closing the modal
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  // Handle saving new transformer
+  const handleSaveTransformer = async transformerData => {
+    try {
+      // Make POST request to save transformer
+      const response = await axios.post('/transformers', transformerData);
+
+      if (response.status === 200 || response.status === 201) {
+        // Success - show success notification
+        showSuccess(
+          'Success!',
+          `Transformer ${transformerData.transformerId} has been saved successfully.`,
+        );
+
+        // Optional: Refresh the transformers list
+        // You might want to call a refresh function here or update the state
+        setTimeout(() => {
+          window.location.reload(); // Simple refresh - can be improved with state management
+        }, 1500); // Give time for user to see the notification
+      }
+    } catch (error) {
+      console.error('Error saving transformer:', error);
+
+      // Handle different error scenarios with notifications
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const message =
+          error.response.data?.message || 'Unknown error occurred';
+
+        if (status === 400) {
+          showError('Validation Error', message);
+        } else if (status === 409) {
+          showError(
+            'Duplicate Transformer',
+            `Transformer with ID ${transformerData.transformerId} already exists`,
+          );
+        } else if (status === 500) {
+          showError('Server Error', 'Please try again later');
+        } else {
+          showError('Error', message);
+        }
+      } else if (error.request) {
+        // Network error
+        showError(
+          'Network Error',
+          'Please check your connection and try again',
+        );
+      } else {
+        // Other error
+        showError('Error', 'Something went wrong while saving the transformer');
+      }
+    }
+  };
+
+  // Handle deleting transformer
+  const handleDeleteTransformer = async transformerId => {
+    setIsDeleting(transformerId);
+    try {
+      // Make DELETE request to remove transformer
+      const response = await axios.delete(`/transformers/${transformerId}`);
+
+      if (response.status === 200 || response.status === 204) {
+        // Success - show success notification
+        showSuccess(
+          'Deleted!',
+          `Transformer ${transformerId} has been deleted successfully.`,
+        );
+
+        // Refresh the transformers list
+        setTimeout(() => {
+          window.location.reload(); // Simple refresh - can be improved with state management
+        }, 1500); // Give time for user to see the notification
+      }
+    } catch (error) {
+      console.error('Error deleting transformer:', error);
+
+      // Handle different error scenarios with notifications
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const message =
+          error.response.data?.message || 'Unknown error occurred';
+
+        if (status === 404) {
+          showError('Not Found', `Transformer ${transformerId} not found`);
+        } else if (status === 403) {
+          showError(
+            'Permission Denied',
+            'You do not have permission to delete this transformer',
+          );
+        } else if (status === 500) {
+          showError('Server Error', 'Please try again later');
+        } else {
+          showError('Error', message);
+        }
+      } else if (error.request) {
+        // Network error
+        showError(
+          'Network Error',
+          'Please check your connection and try again',
+        );
+      } else {
+        // Other error
+        showError(
+          'Error',
+          'Something went wrong while deleting the transformer',
+        );
+      }
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  // Handle opening edit modal
+  const handleEditTransformer = transformer => {
+    setSelectedTransformer(transformer);
+    setIsEditModalOpen(true);
+  };
+
+  // Handle closing edit modal
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedTransformer(null);
+  };
+
+  // Handle saving edited transformer
+  const handleSaveEditedTransformer = async updatedData => {
+    setIsEditing(true);
+    try {
+      // Make PUT request to update transformer
+      const response = await axios.put(
+        `/transformers/${selectedTransformer.id}`,
+        updatedData,
+      );
+
+      if (response.status === 200 || response.status === 204) {
+        // Success - show success notification
+        showSuccess(
+          'Updated!',
+          `Transformer ${updatedData.transformerId} has been updated successfully.`,
+        );
+
+        // Close modal
+        handleCloseEditModal();
+
+        // Refresh the transformers list
+        setTimeout(() => {
+          window.location.reload(); // Simple refresh - can be improved with state management
+        }, 1500); // Give time for user to see the notification
+      }
+    } catch (error) {
+      console.error('Error updating transformer:', error);
+
+      // Handle different error scenarios with notifications
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const message =
+          error.response.data?.message || 'Unknown error occurred';
+
+        if (status === 400) {
+          showError('Validation Error', message);
+        } else if (status === 404) {
+          showError(
+            'Not Found',
+            `Transformer ${updatedData.transformerId} not found`,
+          );
+        } else if (status === 409) {
+          showError(
+            'Conflict',
+            `Another transformer with ID ${updatedData.transformerId} already exists`,
+          );
+        } else if (status === 500) {
+          showError('Server Error', 'Please try again later');
+        } else {
+          showError('Error', message);
+        }
+      } else if (error.request) {
+        // Network error
+        showError(
+          'Network Error',
+          'Please check your connection and try again',
+        );
+      } else {
+        // Other error
+        showError(
+          'Error',
+          'Something went wrong while updating the transformer',
+        );
+      }
+    } finally {
+      setIsEditing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -78,7 +290,10 @@ function TransformersPage() {
           <h1 className='text-2xl font-bold text-gray-800'>Transformers</h1>
           <p className='text-gray-600'>Manage and monitor power transformers</p>
         </div>
-        <button className='flex items-center rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700'>
+        <button
+          onClick={handleOpenModal}
+          className='flex items-center rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700'
+        >
           <PlusIcon className='mr-2 h-5 w-5' />
           Add Transformer
         </button>
@@ -90,17 +305,42 @@ function TransformersPage() {
         filterOptions={filterOptions}
         favorites={favorites}
         toggleFavorite={toggleFavorite}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        searchField={searchField}
-        setSearchField={setSearchField}
-        showFavoritesOnly={showFavoritesOnly}
-        setShowFavoritesOnly={setShowFavoritesOnly}
-        locationFilter={locationFilter}
-        setLocationFilter={setLocationFilter}
-        typeFilter={typeFilter}
-        setTypeFilter={setTypeFilter}
+        searchTerm={filters.searchTerm}
+        setSearchTerm={setters.setSearchTerm}
+        searchField={filters.searchField}
+        setSearchField={setters.setSearchField}
+        showFavoritesOnly={filters.showFavoritesOnly}
+        setShowFavoritesOnly={setters.setShowFavoritesOnly}
+        locationFilter={filters.locationFilter}
+        setLocationFilter={setters.setLocationFilter}
+        typeFilter={filters.typeFilter}
+        setTypeFilter={setters.setTypeFilter}
         resetFilters={resetFilters}
+        onDeleteTransformer={handleDeleteTransformer}
+        onEditTransformer={handleEditTransformer}
+        isDeleting={isDeleting}
+      />
+
+      {/* Add Transformer Modal */}
+      <AddTransformerModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSave={handleSaveTransformer}
+      />
+
+      {/* Edit Transformer Modal */}
+      <EditTransformerModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSave={handleSaveEditedTransformer}
+        transformer={selectedTransformer}
+        isLoading={isEditing}
+      />
+
+      {/* Notification Manager */}
+      <NotificationManager
+        notifications={notifications}
+        removeNotification={removeNotification}
       />
     </div>
   );

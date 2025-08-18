@@ -1,12 +1,6 @@
-// filepath: d:\semi 7\Software design project\WebApp repo\transformer-monitoring\client-side\src\components\InspectionView.jsx
-import React, { useState, useMemo, useEffect } from 'react';
-import {
-  SearchIcon,
-  StarIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  DotsVerticalIcon,
-} from './ui/icons';
+import React, { useState, useMemo } from 'react';
+import { SearchIcon, StarIcon, DotsVerticalIcon } from './ui/icons';
+import { displayValue, isNullValue } from '../utils/displayHelpers';
 
 function InspectionView({ inspections, favorites, toggleFavorite }) {
   // Local filter state
@@ -15,12 +9,13 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All Status');
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
   // Status color mapping
   const getStatusColor = status => {
+    // Handle null/undefined values
+    if (status === null || status === undefined || status === '') {
+      return 'bg-gray-100 text-gray-600';
+    }
+
     switch (status) {
       case 'Completed':
         return 'bg-green-100 text-green-800';
@@ -44,7 +39,7 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
   const statuses = useMemo(() => {
     const safeInspections = Array.isArray(inspections) ? inspections : [];
     const uniqueStatuses = new Set(
-      safeInspections.map(inspection => inspection.status),
+      safeInspections.map(inspection => inspection.status || 'Null'),
     );
     return ['All Status', ...uniqueStatuses];
   }, [inspections]);
@@ -53,15 +48,15 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
   const filteredInspections = useMemo(() => {
     const safeInspections = Array.isArray(inspections) ? inspections : [];
     return safeInspections.filter(inspection => {
-      // Search filter
+      // Search filter - handle null values
       const searchMatch =
         searchTerm === '' ||
         (searchField === 'inspectionId' &&
-          inspection.inspectionId
+          (inspection.inspectionId || '')
             .toLowerCase()
             .includes(searchTerm.toLowerCase())) ||
         (searchField === 'transformerId' &&
-          inspection.transformerId
+          (inspection.transformerId || '')
             .toLowerCase()
             .includes(searchTerm.toLowerCase()));
 
@@ -69,9 +64,10 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
       const favoriteMatch =
         !showFavoritesOnly || favorites.includes(inspection.inspectionId);
 
-      // Status filter
+      // Status filter - handle null values
       const statusMatch =
-        statusFilter === 'All Status' || inspection.status === statusFilter;
+        statusFilter === 'All Status' ||
+        (inspection.status || 'Null') === statusFilter;
 
       return searchMatch && favoriteMatch && statusMatch;
     });
@@ -83,31 +79,6 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
     favorites,
     statusFilter,
   ]);
-
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredInspections.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredInspections.slice(
-    indexOfFirstItem,
-    indexOfLastItem,
-  );
-
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, showFavoritesOnly, statusFilter]);
-
-  // Page change handler
-  const handlePageChange = pageNumber => {
-    setCurrentPage(pageNumber);
-  };
-
-  // Generate page numbers for pagination
-  const pageNumbers = [];
-  for (let i = 1; i <= totalPages; i++) {
-    pageNumbers.push(i);
-  }
 
   return (
     <div>
@@ -197,7 +168,7 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
             </tr>
           </thead>
           <tbody className='divide-y divide-gray-200'>
-            {currentItems.map((inspection, index) => (
+            {filteredInspections.map((inspection, index) => (
               <tr
                 key={index}
                 className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} transition-colors duration-150 hover:bg-gray-100`}
@@ -222,20 +193,60 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
                 </td>
                 <td className='px-6 py-4'>
                   <div className='flex flex-col'>
-                    <span>{inspection.transformerId}</span>
-                    <span className='text-xs text-gray-500'>
-                      {inspection.transformerName}
+                    <span
+                      className={
+                        isNullValue(inspection.transformerId)
+                          ? 'text-gray-400 italic'
+                          : ''
+                      }
+                    >
+                      {displayValue(inspection.transformerId)}
+                    </span>
+                    <span
+                      className={`text-xs ${isNullValue(inspection.transformerName) ? 'text-gray-400 italic' : 'text-gray-500'}`}
+                    >
+                      {displayValue(inspection.transformerName)}
                     </span>
                   </div>
                 </td>
-                <td className='px-6 py-4'>{inspection.inspectionId}</td>
-                <td className='px-6 py-4'>{inspection.inspectedDate}</td>
-                <td className='px-6 py-4'>{inspection.maintenanceDate}</td>
+                <td className='px-6 py-4'>
+                  <span
+                    className={
+                      isNullValue(inspection.inspectionId)
+                        ? 'text-gray-400 italic'
+                        : ''
+                    }
+                  >
+                    {displayValue(inspection.inspectionId)}
+                  </span>
+                </td>
+                <td className='px-6 py-4'>
+                  <span
+                    className={
+                      isNullValue(inspection.inspectedDate)
+                        ? 'text-gray-400 italic'
+                        : ''
+                    }
+                  >
+                    {displayValue(inspection.inspectedDate)}
+                  </span>
+                </td>
+                <td className='px-6 py-4'>
+                  <span
+                    className={
+                      isNullValue(inspection.maintenanceDate)
+                        ? 'text-gray-400 italic'
+                        : ''
+                    }
+                  >
+                    {displayValue(inspection.maintenanceDate)}
+                  </span>
+                </td>
                 <td className='px-6 py-4'>
                   <span
                     className={`rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(inspection.status)}`}
                   >
-                    {inspection.status}
+                    {displayValue(inspection.status)}
                   </span>
                 </td>
                 <td className='px-6 py-4 text-center'>
@@ -252,69 +263,6 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
             ))}
           </tbody>
         </table>
-
-        {/* Pagination Controls */}
-        <div className='flex items-center justify-between border-t border-gray-200 px-6 py-4'>
-          <div className='text-sm text-gray-700'>
-            Showing <span className='font-medium'>{indexOfFirstItem + 1}</span>{' '}
-            to{' '}
-            <span className='font-medium'>
-              {Math.min(indexOfLastItem, filteredInspections.length)}
-            </span>{' '}
-            of <span className='font-medium'>{filteredInspections.length}</span>{' '}
-            inspections
-          </div>
-
-          <div className='flex items-center space-x-2'>
-            <button
-              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className={`rounded-md border px-2 py-1 ${
-                currentPage === 1
-                  ? 'cursor-not-allowed border-gray-200 text-gray-300'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <ChevronLeftIcon />
-            </button>
-
-            {/* Page Numbers */}
-            <div className='hidden space-x-1 md:flex'>
-              {pageNumbers.map(pageNumber => (
-                <button
-                  key={pageNumber}
-                  onClick={() => handlePageChange(pageNumber)}
-                  className={`border px-3 py-1 ${
-                    currentPage === pageNumber
-                      ? 'border-blue-600 bg-blue-600 text-white'
-                      : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-                  } rounded-md`}
-                >
-                  {pageNumber}
-                </button>
-              ))}
-            </div>
-
-            {/* Mobile Page Indicator */}
-            <span className='text-sm text-gray-700 md:hidden'>
-              Page {currentPage} of {totalPages}
-            </span>
-
-            <button
-              onClick={() =>
-                handlePageChange(Math.min(totalPages, currentPage + 1))
-              }
-              disabled={currentPage === totalPages || totalPages === 0}
-              className={`rounded-md border px-2 py-1 ${
-                currentPage === totalPages || totalPages === 0
-                  ? 'cursor-not-allowed border-gray-200 text-gray-300'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <ChevronRightIcon />
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

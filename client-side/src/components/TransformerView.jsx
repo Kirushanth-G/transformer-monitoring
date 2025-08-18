@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
-import {
-  SearchIcon,
-  StarIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  DotsVerticalIcon,
-} from './ui/icons';
+import React from 'react';
+import { SearchIcon, StarIcon } from './ui/icons';
+import { displayValue, isNullValue } from '../utils/displayHelpers';
+import TransformerActionDropdown from './TransformerActionDropdown';
 
 function TransformerView({
   transformers,
@@ -23,41 +19,15 @@ function TransformerView({
   typeFilter,
   setTypeFilter,
   resetFilters,
+  onDeleteTransformer,
+  onEditTransformer,
+  isDeleting,
 }) {
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
   // Use pre-filtered transformers from the filter hook
   const filteredTransformers = transformers;
 
   // Use filter options from the filter hook
   const { locations, types } = filterOptions;
-
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredTransformers.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredTransformers.slice(
-    indexOfFirstItem,
-    indexOfLastItem,
-  );
-
-  // Reset to first page when filters change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, showFavoritesOnly, locationFilter, typeFilter]);
-
-  // Page change handler
-  const handlePageChange = pageNumber => {
-    setCurrentPage(pageNumber);
-  };
-
-  // Generate page numbers for pagination
-  const pageNumbers = [];
-  for (let i = 1; i <= totalPages; i++) {
-    pageNumbers.push(i);
-  }
 
   return (
     <>
@@ -159,17 +129,17 @@ function TransformerView({
             </tr>
           </thead>
           <tbody className='divide-y divide-gray-200'>
-            {currentItems.map((transformer, index) => (
+            {filteredTransformers.map((transformer, index) => (
               <tr
                 key={index}
                 className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} transition-colors duration-150 hover:bg-gray-100`}
               >
                 <td className='px-6 py-4 text-center'>
                   <button
-                    onClick={() => toggleFavorite(transformer.id)}
+                    onClick={() => toggleFavorite(transformer.transformerId)}
                     className='focus:outline-none'
                   >
-                    {favorites.includes(transformer.id) ? (
+                    {favorites.includes(transformer.transformerId) ? (
                       <StarIcon
                         className='h-6 w-6 text-blue-800'
                         filled={true}
@@ -182,18 +152,52 @@ function TransformerView({
                     )}
                   </button>
                 </td>
-                <td className='px-6 py-4'>{transformer.id}</td>
-                <td className='px-6 py-4'>{transformer.poleNo}</td>
-                <td className='px-6 py-4'>{transformer.location}</td>
+                <td className='px-6 py-4'>
+                  <span
+                    className={
+                      isNullValue(transformer.transformerId)
+                        ? 'text-gray-400 italic'
+                        : ''
+                    }
+                  >
+                    {displayValue(transformer.transformerId)}
+                  </span>
+                </td>
+                <td className='px-6 py-4'>
+                  <span
+                    className={
+                      isNullValue(transformer.poleNo)
+                        ? 'text-gray-400 italic'
+                        : ''
+                    }
+                  >
+                    {displayValue(transformer.poleNo)}
+                  </span>
+                </td>
+                <td className='px-6 py-4'>
+                  <span
+                    className={
+                      isNullValue(transformer.location)
+                        ? 'text-gray-400 italic'
+                        : ''
+                    }
+                  >
+                    {displayValue(transformer.location)}
+                  </span>
+                </td>
                 <td className='px-6 py-4'>
                   <span
                     className={`rounded-full px-2 py-1 text-xs font-medium ${
                       transformer.type === 'Bulk'
                         ? 'bg-blue-100 text-blue-800'
-                        : 'bg-green-100 text-green-800'
+                        : transformer.type === null ||
+                            transformer.type === undefined ||
+                            transformer.type === ''
+                          ? 'bg-gray-100 text-gray-600'
+                          : 'bg-green-100 text-green-800'
                     }`}
                   >
-                    {transformer.type}
+                    {displayValue(transformer.type)}
                   </span>
                 </td>
                 <td className='px-6 py-4 text-center'>
@@ -202,78 +206,17 @@ function TransformerView({
                   </button>
                 </td>
                 <td className='px-3 py-4 text-center'>
-                  <button className='rounded-full p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none'>
-                    <DotsVerticalIcon />
-                  </button>
+                  <TransformerActionDropdown
+                    transformer={transformer}
+                    onDelete={onDeleteTransformer}
+                    onEdit={onEditTransformer}
+                    isLoading={isDeleting === transformer.id}
+                  />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-
-        {/* Pagination Controls */}
-        <div className='flex items-center justify-between border-t border-gray-200 px-6 py-4'>
-          <div className='text-sm text-gray-700'>
-            Showing <span className='font-medium'>{indexOfFirstItem + 1}</span>{' '}
-            to{' '}
-            <span className='font-medium'>
-              {Math.min(indexOfLastItem, filteredTransformers.length)}
-            </span>{' '}
-            of{' '}
-            <span className='font-medium'>{filteredTransformers.length}</span>{' '}
-            transformers
-          </div>
-
-          <div className='flex items-center space-x-2'>
-            <button
-              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className={`rounded-md border px-2 py-1 ${
-                currentPage === 1
-                  ? 'cursor-not-allowed border-gray-200 text-gray-300'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <ChevronLeftIcon />
-            </button>
-
-            {/* Page Numbers */}
-            <div className='hidden space-x-1 md:flex'>
-              {pageNumbers.map(pageNumber => (
-                <button
-                  key={pageNumber}
-                  onClick={() => handlePageChange(pageNumber)}
-                  className={`border px-3 py-1 ${
-                    currentPage === pageNumber
-                      ? 'border-blue-600 bg-blue-600 text-white'
-                      : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-                  } rounded-md`}
-                >
-                  {pageNumber}
-                </button>
-              ))}
-            </div>
-
-            {/* Mobile Page Indicator */}
-            <span className='text-sm text-gray-700 md:hidden'>
-              Page {currentPage} of {totalPages}
-            </span>
-
-            <button
-              onClick={() =>
-                handlePageChange(Math.min(totalPages, currentPage + 1))
-              }
-              disabled={currentPage === totalPages || totalPages === 0}
-              className={`rounded-md border px-2 py-1 ${
-                currentPage === totalPages || totalPages === 0
-                  ? 'cursor-not-allowed border-gray-200 text-gray-300'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <ChevronRightIcon />
-            </button>
-          </div>
-        </div>
       </div>
     </>
   );

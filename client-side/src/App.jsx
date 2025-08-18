@@ -10,6 +10,7 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
+import TransformerDetailsPage from './pages/TransformerDetailsPage';
 
 function App() {
   return (
@@ -30,6 +31,10 @@ function App() {
                 element={<Navigate to='/transformers' replace />}
               />
               <Route path='/transformers' element={<TransformersPage />} />
+              <Route
+                path='/transformers/:id'
+                element={<TransformerDetailsPage />}
+              />
               <Route path='/inspections' element={<InspectionsPage />} />
               <Route path='/settings' element={<Settings />} />
               <Route path='*' element={<NotFound />} />

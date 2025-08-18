@@ -2,7 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { SearchIcon, StarIcon, DotsVerticalIcon } from './ui/icons';
 import { displayValue, isNullValue } from '../utils/displayHelpers';
 
-function InspectionView({ inspections, favorites, toggleFavorite }) {
+function InspectionView({ 
+  inspections, 
+  favorites, 
+  toggleFavorite }) {
   // Local filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState('inspectionId');

@@ -95,11 +95,13 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
 
   return (
     <div
-      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center bg-black'
+      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center'
       onClick={handleBackdropClick}
     >
+    <div 
+      className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
       <div
-        className='relative z-60 mx-4 w-full max-w-md rounded-lg bg-white shadow-xl'
+        className='relative animate-fade-in z-60 mx-4 w-full max-w-md rounded-lg bg-white shadow-xl'
         onClick={e => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -182,7 +184,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
                 name='type'
                 value={formData.type}
                 onChange={handleInputChange}
-                className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                className={`w-full rounded-md border px-3 py-2 focus:ring-2 bg-white text-gray-900 focus:ring-blue-500 focus:outline-none ${
                   errors.type ? 'border-red-500' : 'border-gray-300'
                 }`}
               >

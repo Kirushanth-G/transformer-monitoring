@@ -16,3 +16,15 @@ spring:
       hibernate:
         format_sql: true
         use_sql_comments: true
+
+cloud:
+    aws:
+        region:
+          static: ap-southeast-1
+        credentials:
+          access-key: ${AWS_ACCESS_KEY}
+          secret-key: ${AWS_SECRET_KEY}
+
+aws:
+    bucket:
+        name: power-grid

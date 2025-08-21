@@ -19,36 +19,75 @@ import java.util.List;
 @RequestMapping("/inspections")
 public class InspectionController {
 
-    private final InspectionRepository inspectionRepository;
-    private final InspectionMapper inspectionMapper;
-    private final TransformerRepository transformerRepository;
+  private final InspectionRepository inspectionRepository;
+  private final InspectionMapper inspectionMapper;
+  private final TransformerRepository transformerRepository;
 
-    @GetMapping
-    public List<InspectionDto> getAllInspections() {
-        List<Inspection> inspections = inspectionRepository.findAll();
-        return inspections.stream()
-                .map(inspectionMapper::toDto)
-                .toList();
-    }
+  @GetMapping
+  public List<InspectionDto> getAllInspections() {
+    List<Inspection> inspections = inspectionRepository.findAll();
+    return inspections.stream()
+        .map(inspectionMapper::toDto)
+        .toList();
+  }
 
-    @PostMapping
-    public ResponseEntity<Inspection> createInspection(@RequestBody InspectionCreateRequest request) {
-        Inspection inspection = inspectionMapper.toEntity(request);
-
-
-        Transformer transformer = transformerRepository.findByTransformerId(request.getTransformerId()).orElse(null);
-        if (transformer == null) {
-            return ResponseEntity.notFound().build();
+  @GetMapping("/{id}")
+    public ResponseEntity<InspectionDto> getInspectionById(@PathVariable Long id) {
+        Inspection inspection = inspectionRepository.findById(id).orElse(null);
+        if (inspection == null) {
+          return ResponseEntity.notFound().build();
         }
-        inspection.setTransformer(transformer);
-
-        int count = inspectionRepository.countByTransformerId(inspection.getTransformer().getId());
-        String inspectionNo = String.format("INSP-%03d", count + 1);
-        inspection.setInspectionNo(inspectionNo);
-
-        inspection.setStatus("Pending"); // or "In Progress" or "Completed" as needed
-
-        inspectionRepository.save(inspection);
-        return ResponseEntity.ok().build();
+        InspectionDto inspectionDto = inspectionMapper.toDto(inspection);
+        return ResponseEntity.ok(inspectionDto);
     }
+
+  @PostMapping
+  public ResponseEntity<Inspection> createInspection(@RequestBody InspectionCreateRequest request) {
+    Inspection inspection = inspectionMapper.toEntity(request);
+
+    Transformer transformer = transformerRepository.findByTransformerId(request.getTransformerId()).orElse(null);
+    if (transformer == null) {
+      return ResponseEntity.notFound().build();
+    }
+    inspection.setTransformer(transformer);
+
+    int count = inspectionRepository.countByTransformerId(inspection.getTransformer().getId());
+    String inspectionNo = String.format("INSP-%03d", count + 1);
+    inspection.setInspectionNo(inspectionNo);
+
+    inspection.setStatus("Pending"); // or "In Progress" or "Completed" as needed
+
+    inspectionRepository.save(inspection);
+    return ResponseEntity.ok().build();
+  }
+
+  @PutMapping("/{id}")
+  public ResponseEntity<InspectionDto> updateInspection(@PathVariable Long id, @RequestBody InspectionCreateRequest request) {
+    Inspection existingInspection = inspectionRepository.findById(id).orElse(null);
+    if (existingInspection == null) {
+      return ResponseEntity.notFound().build();
+    }
+
+    Inspection updatedInspection = inspectionMapper.toEntity(request);
+    updatedInspection.setId(existingInspection.getId());
+
+    Transformer transformer = transformerRepository.findByTransformerId(request.getTransformerId()).orElse(null);
+    if (transformer == null) {
+      return ResponseEntity.notFound().build();
+    }
+    updatedInspection.setTransformer(transformer);
+    Inspection savedInspection = inspectionRepository.save(updatedInspection);
+    InspectionDto inspectionDto = inspectionMapper.toDto(savedInspection);
+    return ResponseEntity.ok(inspectionDto);
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteInspection(@RequestParam Long id) {
+    Inspection inspection = inspectionRepository.findById(id).orElse(null);
+    if (inspection == null) {
+      return ResponseEntity.notFound().build();
+    }
+    inspectionRepository.delete(inspection);
+    return ResponseEntity.noContent().build();
+  }
 }

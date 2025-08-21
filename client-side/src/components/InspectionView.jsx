@@ -90,7 +90,7 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
             <select
               value={searchField}
               onChange={e => setSearchField(e.target.value)}
-              className='w-[150px] appearance-none border-0 bg-[#F5F5F5] px-3 py-2 text-gray-400 focus:outline-none'
+              className='w-[150px] border-0 bg-[#F5F5F5] px-3 py-2 text-gray-400 focus:outline-none'
             >
               <option value='inspectionId'>Inspection No.</option>
               <option value='transformerId'>Transformer No.</option>

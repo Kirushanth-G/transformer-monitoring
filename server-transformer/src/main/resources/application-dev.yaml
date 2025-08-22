@@ -1,0 +1,8 @@
+cloud:
+  aws:
+    region:
+      static: ap-southeast-1
+
+aws:
+  bucket:
+    name: power-grid

@@ -9,9 +9,11 @@ import { useTransformerFilters } from '../hooks/useTransformerFilters';
 import { useNotifications } from '../hooks/useNotifications';
 import { PlusIcon } from '../components/ui/icons';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../api/axiosConfig';
 
 function TransformersPage() {
+  const navigate = useNavigate();
   const { transformers, loading, error } = useTransformers();
   const { favorites, toggleFavorite } = useFavorites();
   const { notifications, removeNotification, showSuccess, showError } =
@@ -238,6 +240,11 @@ function TransformersPage() {
     }
   };
 
+  // Handle viewing transformer details
+  const handleViewTransformer = transformer => {
+    navigate(`/transformers/${transformer.id}`);
+  };
+
   if (loading) {
     return (
       <div className='min-h-screen bg-[#E5E4E2] p-8'>
@@ -318,6 +325,7 @@ function TransformersPage() {
         resetFilters={resetFilters}
         onDeleteTransformer={handleDeleteTransformer}
         onEditTransformer={handleEditTransformer}
+        onViewTransformer={handleViewTransformer}
         isDeleting={isDeleting}
       />
 

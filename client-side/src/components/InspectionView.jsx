@@ -1,8 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { SearchIcon, StarIcon, DotsVerticalIcon } from './ui/icons';
+import { SearchIcon, StarIcon } from './ui/icons';
 import { displayValue, isNullValue } from '../utils/displayHelpers';
+import InspectionActionDropdown from './InspectionActionDropdown';
 
-function InspectionView({ inspections, favorites, toggleFavorite }) {
+function InspectionView({
+  inspections,
+  favorites,
+  toggleFavorite,
+  onEdit,
+  onDelete,
+  isLoading,
+}) {
   // Local filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState('inspectionId');
@@ -255,9 +263,12 @@ function InspectionView({ inspections, favorites, toggleFavorite }) {
                   </button>
                 </td>
                 <td className='px-3 py-4 text-center'>
-                  <button className='rounded-full p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none'>
-                    <DotsVerticalIcon />
-                  </button>
+                  <InspectionActionDropdown
+                    inspection={inspection}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    isLoading={isLoading}
+                  />
                 </td>
               </tr>
             ))}

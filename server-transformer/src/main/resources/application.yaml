@@ -2,7 +2,7 @@ spring:
   application:
     name: server-transformer
   profiles:
-    active: dev
+    active: local
 
   datasource:
     url: jdbc:postgresql://db-powergrid.cj8w82u2a1vs.ap-southeast-1.rds.amazonaws.com/db-transformer

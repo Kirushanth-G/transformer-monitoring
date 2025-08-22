@@ -2,6 +2,7 @@ import TransformerView from '../components/TransformerView';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AddTransformerModal from '../components/AddTransformerModal';
 import EditTransformerModal from '../components/EditTransformerModal';
+import TransformerDetailModal from '../components/TransformerDetailModal';
 import NotificationManager from '../components/NotificationManager';
 import { useTransformers } from '../hooks/useTransformers';
 import { useFavorites } from '../hooks/useFavorites';
@@ -9,11 +10,9 @@ import { useTransformerFilters } from '../hooks/useTransformerFilters';
 import { useNotifications } from '../hooks/useNotifications';
 import { PlusIcon } from '../components/ui/icons';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from '../api/axiosConfig';
 
 function TransformersPage() {
-  const navigate = useNavigate();
   const { transformers, loading, error } = useTransformers();
   const { favorites, toggleFavorite } = useFavorites();
   const { notifications, removeNotification, showSuccess, showError } =
@@ -23,6 +22,9 @@ function TransformersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTransformer, setSelectedTransformer] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedTransformerForDetail, setSelectedTransformerForDetail] =
+    useState(null);
   const [isDeleting, setIsDeleting] = useState(null); // Track which transformer is being deleted
   const [isEditing, setIsEditing] = useState(false); // Track if currently editing
 
@@ -242,7 +244,14 @@ function TransformersPage() {
 
   // Handle viewing transformer details
   const handleViewTransformer = transformer => {
-    navigate(`/transformers/${transformer.id}`);
+    setSelectedTransformerForDetail(transformer);
+    setIsDetailModalOpen(true);
+  };
+
+  // Handle closing transformer detail modal
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedTransformerForDetail(null);
   };
 
   if (loading) {
@@ -343,6 +352,15 @@ function TransformersPage() {
         onSave={handleSaveEditedTransformer}
         transformer={selectedTransformer}
         isLoading={isEditing}
+      />
+
+      {/* Transformer Detail Modal */}
+      <TransformerDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        transformer={selectedTransformerForDetail}
+        showSuccess={showSuccess}
+        showError={showError}
       />
 
       {/* Notification Manager */}

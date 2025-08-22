@@ -21,12 +21,19 @@ public class S3Service {
     @Value("${aws.bucket.name}")
     private String bucketName;
 
-    public void uploadFile(MultipartFile file) throws IOException {
-        s3Client.putObject(PutObjectRequest.builder()
-                        .bucket(bucketName)
-                        .key(file.getOriginalFilename())
-                        .build(),
-                RequestBody.fromBytes(file.getBytes()));
+    public String uploadFile(MultipartFile file) {
+        try {
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            s3Client.putObject(PutObjectRequest.builder()
+                            .bucket(bucketName)
+                            .key(fileName)
+                            .build(),
+                    RequestBody.fromBytes(file.getBytes()));
+
+            return String.format("https://%s.s3.amazonaws.com/%s", bucketName, fileName);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload file to S3", e);
+        }
     }
 
     public byte[] downloadFile(String key) {

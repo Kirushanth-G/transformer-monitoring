@@ -316,7 +316,6 @@ function InspectionsPage() {
         onSave={handleUpdateInspection}
         inspection={selectedInspection}
         isLoading={isSubmitting}
-        existingInspectionNumbers={inspections.map((inspection) => inspection.inspectionNo)} // Pass the list of existing inspection numbers
       />
 
       {/* Notification Manager */}

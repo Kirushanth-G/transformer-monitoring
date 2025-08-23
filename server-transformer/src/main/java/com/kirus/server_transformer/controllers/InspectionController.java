@@ -3,12 +3,16 @@ package com.kirus.server_transformer.controllers;
 import com.kirus.server_transformer.dtos.InspectionCreateRequest;
 import com.kirus.server_transformer.dtos.InspectionDto;
 import com.kirus.server_transformer.dtos.InspectionUpdateRequest;
+import com.kirus.server_transformer.dtos.PagedResponse;
 import com.kirus.server_transformer.entities.Inspection;
 import com.kirus.server_transformer.entities.Transformer;
 import com.kirus.server_transformer.mappers.InspectionMapper;
 import com.kirus.server_transformer.repositories.InspectionRepository;
 import com.kirus.server_transformer.repositories.TransformerRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,11 +29,37 @@ public class InspectionController {
   private final TransformerRepository transformerRepository;
 
   @GetMapping
-  public List<InspectionDto> getAllInspections() {
-    List<Inspection> inspections = inspectionRepository.findAll();
-    return inspections.stream()
-        .map(inspectionMapper::toDto)
-        .toList();
+  public ResponseEntity<PagedResponse<InspectionDto>> getAllInspections(
+          @RequestParam(defaultValue = "0") int page,
+          @RequestParam(defaultValue = "10") int size) {
+
+    Pageable pageable = PageRequest.of(page, size);
+    Page<Inspection> inspectionPage = inspectionRepository.findAll(pageable);
+
+    Page<InspectionDto> inspectionDtoPage = inspectionPage.map(inspectionMapper::toDto);
+    PagedResponse<InspectionDto> response = PagedResponse.of(inspectionDtoPage);
+
+    return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/transformer/{transformerId}")
+  public ResponseEntity<PagedResponse<InspectionDto>> getInspectionsByTransformer(
+          @PathVariable String transformerId,
+          @RequestParam(defaultValue = "0") int page,
+          @RequestParam(defaultValue = "10") int size) {
+
+    Transformer transformer = transformerRepository.findByTransformerId(transformerId).orElse(null);
+    if (transformer == null) {
+      return ResponseEntity.notFound().build();
+    }
+
+    Pageable pageable = PageRequest.of(page, size);
+    Page<Inspection> inspectionPage = inspectionRepository.findByTransformerId(transformer.getId(), pageable);
+
+    Page<InspectionDto> inspectionDtoPage = inspectionPage.map(inspectionMapper::toDto);
+    PagedResponse<InspectionDto> response = PagedResponse.of(inspectionDtoPage);
+
+    return ResponseEntity.ok(response);
   }
 
   @GetMapping("/{id}")

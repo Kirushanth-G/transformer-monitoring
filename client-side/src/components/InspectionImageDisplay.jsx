@@ -5,7 +5,7 @@ import {
   deleteInspectionImage,
   getTransformerImage,
 } from '../api/imageApi';
-import axios from '../api/axiosConfig';
+import { getAllTransformers } from '../api/transformerApi';
 import { PlusIcon, TrashIcon } from './ui/icons';
 
 function InspectionImageDisplay({
@@ -202,8 +202,7 @@ function InspectionImageDisplay({
     try {
       // First, get the transformer details to find the actual database ID
       console.log('Looking for transformer with ID:', transformerId);
-      const transformersResponse = await axios.get('/transformers');
-      const transformers = transformersResponse.data;
+      const transformers = await getAllTransformers();
 
       // Find the transformer by transformerId (string like "T5")
       const transformer = transformers.find(
@@ -751,7 +750,9 @@ function InspectionImageDisplay({
                     errors.file ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
-                {errors.file && <p className='mt-1 text-xs text-red-500'>{errors.file}</p>}
+                {errors.file && (
+                  <p className='mt-1 text-xs text-red-500'>{errors.file}</p>
+                )}
               </div>
 
               {/* Action Buttons */}

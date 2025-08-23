@@ -1,11 +1,15 @@
 package com.kirus.server_transformer.controllers;
 
+import com.kirus.server_transformer.dtos.PagedResponse;
 import com.kirus.server_transformer.dtos.TransformerDto;
 import com.kirus.server_transformer.dtos.TransformerWithInspectionsDto;
 import com.kirus.server_transformer.entities.Transformer;
 import com.kirus.server_transformer.mappers.TransformerMapper;
 import com.kirus.server_transformer.repositories.TransformerRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,11 +25,17 @@ public class TransformerController {
     private final TransformerMapper transformerMapper;
 
     @GetMapping
-    public List<TransformerDto> getAllTransformers() {
-        List<Transformer> transformers = transformerRepository.findAll();
-        return transformers.stream()
-                .map(transformerMapper::toDto)
-                .toList();
+    public ResponseEntity<PagedResponse<TransformerDto>> getAllTransformers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Transformer> transformerPage = transformerRepository.findAll(pageable);
+
+        Page<TransformerDto> transformerDtoPage = transformerPage.map(transformerMapper::toDto);
+        PagedResponse<TransformerDto> response = PagedResponse.of(transformerDtoPage);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")

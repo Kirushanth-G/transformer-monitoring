@@ -14,7 +14,7 @@ import axios from '../api/axiosConfig';
 
 function TransformersPage() {
   const navigate = useNavigate();
-  const { transformers, loading, error } = useTransformers();
+  const { transformers, loading, error, refetch } = useTransformers();
   const { favorites, toggleFavorite } = useFavorites();
   const { notifications, removeNotification, showSuccess, showError } =
     useNotifications();
@@ -58,11 +58,9 @@ function TransformersPage() {
           `Transformer ${transformerData.transformerId} has been saved successfully.`,
         );
 
-        // Optional: Refresh the transformers list
-        // You might want to call a refresh function here or update the state
-        setTimeout(() => {
-          window.location.reload(); // Simple refresh - can be improved with state management
-        }, 1500); // Give time for user to see the notification
+        handleCloseModal(); // close modal
+
+        refetch();
       }
     } catch (error) {
       console.error('Error saving transformer:', error);
@@ -100,23 +98,22 @@ function TransformersPage() {
   };
 
   // Handle deleting transformer
-  const handleDeleteTransformer = async transformerId => {
-    setIsDeleting(transformerId);
+  const handleDeleteTransformer = async transformer_Id => {
+    setIsDeleting(transformer_Id);
+    // get transformer first
+    const transformer = transformers.find(trans => trans.id === transformer_Id);
     try {
       // Make DELETE request to remove transformer
-      const response = await axios.delete(`/transformers/${transformerId}`);
-
+      const response = await axios.delete(`/transformers/${transformer_Id}`);
+      
       if (response.status === 200 || response.status === 204) {
         // Success - show success notification
         showSuccess(
           'Deleted!',
-          `Transformer ${transformerId} has been deleted successfully.`,
+          `Transformer ${transformer?.transformerId} has been deleted successfully.`,
         );
 
-        // Refresh the transformers list
-        setTimeout(() => {
-          window.location.reload(); // Simple refresh - can be improved with state management
-        }, 1500); // Give time for user to see the notification
+        refetch(); 
       }
     } catch (error) {
       console.error('Error deleting transformer:', error);
@@ -129,7 +126,7 @@ function TransformersPage() {
           error.response.data?.message || 'Unknown error occurred';
 
         if (status === 404) {
-          showError('Not Found', `Transformer ${transformerId} not found`);
+          showError('Not Found', `Transformer ${transformer_Id} not found`);
         } else if (status === 403) {
           showError(
             'Permission Denied',
@@ -191,9 +188,7 @@ function TransformersPage() {
         handleCloseEditModal();
 
         // Refresh the transformers list
-        setTimeout(() => {
-          window.location.reload(); // Simple refresh - can be improved with state management
-        }, 1500); // Give time for user to see the notification
+        refetch();
       }
     } catch (error) {
       console.error('Error updating transformer:', error);

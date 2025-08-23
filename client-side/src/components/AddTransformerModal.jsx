@@ -95,11 +95,13 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
 
   return (
     <div
-      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center bg-black'
+      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center'
       onClick={handleBackdropClick}
     >
+    <div 
+      className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
       <div
-        className='relative z-60 mx-4 w-full max-w-md rounded-lg bg-white shadow-xl'
+        className='relative animate-fade-in z-60 mx-4 w-full max-w-md rounded-lg bg-white shadow-xl'
         onClick={e => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -124,7 +126,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
                 htmlFor='transformerId'
                 className='mb-1 block text-sm font-medium text-gray-700'
               >
-                Transformer ID *
+                Transformer No *
               </label>
               <input
                 type='text'
@@ -136,7 +138,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
                 className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                   errors.transformerId ? 'border-red-500' : 'border-gray-300'
                 } ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
-                placeholder='Enter transformer ID'
+                placeholder='Enter Transformer Number'
               />
               {errors.transformerId && (
                 <p className='mt-1 text-sm text-red-600'>
@@ -162,7 +164,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
                 className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                   errors.location ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder='Enter location'
+                placeholder='Enter Location'
               />
               {errors.location && (
                 <p className='mt-1 text-sm text-red-600'>{errors.location}</p>
@@ -182,7 +184,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
                 name='type'
                 value={formData.type}
                 onChange={handleInputChange}
-                className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                className={`w-full rounded-md border px-3 py-2 focus:ring-2 bg-white text-gray-900 focus:ring-blue-500 focus:outline-none ${
                   errors.type ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
@@ -212,7 +214,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
                 className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                   errors.poleNo ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder='Enter pole number'
+                placeholder='Enter Pole Number'
               />
               {errors.poleNo && (
                 <p className='mt-1 text-sm text-red-600'>{errors.poleNo}</p>
@@ -221,7 +223,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
           </div>
 
           {/* Modal Footer */}
-          <div className='mt-6 flex items-center justify-end space-x-3 border-t border-gray-200 pt-4'>
+          <div className='mt-6 flex items-center justify-end space-x-3 pt-4'>
             <button
               type='button'
               onClick={handleClose}

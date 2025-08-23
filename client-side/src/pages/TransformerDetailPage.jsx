@@ -305,38 +305,38 @@ function TransformerDetailPage() {
               </div>
               <button
                 onClick={() => navigate('/transformers')}
-                className='rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50'
+                className='rounded-md bg-blue-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-blue-300'
               >
                 Back to List
               </button>
             </div>
 
             {/* Transformer Info Grid */}
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-4'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-5'>
               <div className='rounded-lg bg-gray-50 p-4'>
-                <h3 className='mb-1 text-sm font-medium text-gray-500'>
+                <h3 className='mb-1 text-sm font-medium text-gray-500 text-center'>
                   Location
                 </h3>
                 <p
-                  className={`text-lg font-semibold ${isNullValue(transformer.location) ? 'text-gray-400 italic' : 'text-gray-900'}`}
+                  className={`text-lg font-semibold ${isNullValue(transformer.location) ? 'text-gray-400 italic' : 'text-gray-900 text-center'}`}
                 >
                   {displayValue(transformer.location)}
                 </p>
               </div>
               <div className='rounded-lg bg-gray-50 p-4'>
-                <h3 className='mb-1 text-sm font-medium text-gray-500'>Type</h3>
+                <h3 className='mb-1 text-sm font-medium text-gray-500 text-center'>Type</h3>
                 <p
-                  className={`text-lg font-semibold ${isNullValue(transformer.type) ? 'text-gray-400 italic' : 'text-gray-900'}`}
+                  className={`text-lg font-semibold ${isNullValue(transformer.type) ? 'text-gray-400 italic' : 'text-gray-900 text-center'}`}
                 >
                   {displayValue(transformer.type)}
                 </p>
               </div>
               <div className='rounded-lg bg-gray-50 p-4'>
-                <h3 className='mb-1 text-sm font-medium text-gray-500'>
+                <h3 className='mb-1 text-sm font-medium text-gray-500 text-center'>
                   Pole Number
                 </h3>
                 <p
-                  className={`text-lg font-semibold ${isNullValue(transformer.poleNo) ? 'text-gray-400 italic' : 'text-gray-900'}`}
+                  className={`text-lg font-semibold ${isNullValue(transformer.poleNo) ? 'text-gray-400 italic' : 'text-gray-900 text-center'}`}
                 >
                   {displayValue(transformer.poleNo)}
                 </p>
@@ -370,26 +370,25 @@ function TransformerDetailPage() {
             <div className='overflow-x-auto'>
               <table className='w-full table-auto'>
                 <thead>
-                  <tr className='border-b border-gray-200 bg-gray-50'>
-                    <th className='px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase'>
-                      <StarIcon className='h-4 w-4' />
+                  <tr className='border-b border-gray-200 bg-blue-200'>
+                    <th className='px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-900 uppercase'>
                     </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase'>
+                    <th className='px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-900 uppercase'>
                       Inspection No. ↕
                     </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase'>
+                    <th className='px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-900 uppercase'>
                       Inspected Date
                     </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase'>
+                    <th className='px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-900 uppercase'>
                       Maintenance Date
                     </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase'>
+                    <th className='px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-900 uppercase'>
                       Status
                     </th>
-                    <th className='px-6 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase'>
+                    <th className='px-6 py-3 text-center text-xs font-medium tracking-wider text-gray-900 uppercase'>
                       Actions
                     </th>
-                    <th className='px-6 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase'>
+                    <th className='px-6 py-3 text-center text-xs font-medium tracking-wider text-gray-900 uppercase'>
                       Menu
                     </th>
                   </tr>

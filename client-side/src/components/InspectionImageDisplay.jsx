@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   getInspectionImage,
   uploadInspectionImage,
@@ -25,6 +25,12 @@ function InspectionImageDisplay({
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [baselineImageUrl, setBaselineImageUrl] = useState(null);
+  const [errors, setErrors] = useState({
+    environmentalCondition: '',
+    uploaderName: '',
+    file: '',
+  });
+  const fileInputRef = useRef(null);
 
   // Load image on component mount
   useEffect(() => {
@@ -84,19 +90,41 @@ function InspectionImageDisplay({
     }
   };
 
-  const handleFileSelect = async event => {
-    const file = event.target.files[0];
-    if (!file) return;
+  // Add validation for Environmental Condition, Uploader Name, and Image
+  const validateForm = () => {
+    const newErrors = {};
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      showError('Invalid File', 'Please select an image file');
+    if (!environmentalCondition) {
+      newErrors.environmentalCondition =
+        'Please select an environmental condition.';
+    }
+    if (!uploaderName.trim()) {
+      newErrors.uploaderName = 'Please enter your name.';
+    }
+
+    const file = fileInputRef.current ? fileInputRef.current.files[0] : null;
+    if (!file) {
+      newErrors.file = 'Please select an image file.';
+    } else {
+      if (!file.type.startsWith('image/')) {
+        newErrors.file = 'The selected file must be an image.';
+      } else if (file.size > 10 * 1024 * 1024) {
+        newErrors.file = 'The image size must not exceed 10 MB.';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleUpload = async () => {
+    if (!validateForm()) {
       return;
     }
 
-    // Validate file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-      showError('File Too Large', 'Please select an image smaller than 10MB');
+    const file = fileInputRef.current.files[0];
+    if (!file) {
+      showError('Validation Error', 'Please select an image file.');
       return;
     }
 
@@ -663,14 +691,26 @@ function InspectionImageDisplay({
                 </label>
                 <select
                   value={environmentalCondition}
-                  onChange={e => setEnvironmentalCondition(e.target.value)}
-                  className='w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none'
+                  onChange={e => {
+                    setEnvironmentalCondition(e.target.value);
+                    setErrors({ ...errors, environmentalCondition: '' });
+                  }}
+                  className={`w-full rounded border px-3 py-2 text-sm focus:outline-none ${
+                    errors.environmentalCondition
+                      ? 'border-red-500'
+                      : 'border-gray-300'
+                  }`}
                 >
                   <option value=''>Select condition</option>
                   <option value='Sunny'>Sunny</option>
                   <option value='Cloudy'>Cloudy</option>
                   <option value='Rainy'>Rainy</option>
                 </select>
+                {errors.environmentalCondition && (
+                  <p className='mt-1 text-xs text-red-500'>
+                    {errors.environmentalCondition}
+                  </p>
+                )}
               </div>
 
               {/* Uploader Name Input */}
@@ -681,10 +721,20 @@ function InspectionImageDisplay({
                 <input
                   type='text'
                   value={uploaderName}
-                  onChange={e => setUploaderName(e.target.value)}
+                  onChange={e => {
+                    setUploaderName(e.target.value);
+                    setErrors({ ...errors, uploaderName: '' });
+                  }}
                   placeholder='Enter your name'
-                  className='w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none'
+                  className={`w-full rounded border px-3 py-2 text-sm focus:outline-none ${
+                    errors.uploaderName ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {errors.uploaderName && (
+                  <p className='mt-1 text-xs text-red-500'>
+                    {errors.uploaderName}
+                  </p>
+                )}
               </div>
 
               {/* File Input */}
@@ -695,10 +745,13 @@ function InspectionImageDisplay({
                 <input
                   type='file'
                   accept='image/*'
-                  onChange={handleFileSelect}
-                  disabled={uploading}
-                  className='w-full rounded border border-gray-300 px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-blue-50 file:px-4 file:py-1 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100'
+                  ref={fileInputRef}
+                  onChange={() => setErrors({ ...errors, file: '' })}
+                  className={`w-full rounded border px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-blue-50 file:px-4 file:py-1 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100 ${
+                    errors.file ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {errors.file && <p className='mt-1 text-xs text-red-500'>{errors.file}</p>}
               </div>
 
               {/* Action Buttons */}
@@ -713,6 +766,13 @@ function InspectionImageDisplay({
                   className='flex-1 rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50'
                 >
                   Cancel
+                </button>
+                <button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  className='flex-1 rounded border border-blue-300 bg-blue-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50'
+                >
+                  Upload
                 </button>
               </div>
             </div>

@@ -4,7 +4,7 @@ import {
   uploadTransformerImage,
   deleteTransformerImage,
 } from '../api/imageApi';
-import { PlusIcon, TrashIcon } from './ui/icons';
+import { PlusIcon, TrashIcon, EyeIcon } from './ui/icons';
 
 function TransformerImageDisplay({
   transformerId,
@@ -292,7 +292,7 @@ function TransformerImageDisplay({
 
   if (loading) {
     return (
-      <div className='rounded-lg bg-gray-50 p-4'>
+      <div className='rounded-lg bg-gray-50 p-2'>
         <h3 className='mb-2 text-sm font-medium text-gray-500'>
           Baseline Image
         </h3>
@@ -304,49 +304,31 @@ function TransformerImageDisplay({
   }
 
   return (
-    <div className='rounded-lg bg-gray-50 p-4'>
-      <h3 className='mb-2 text-sm font-medium text-gray-500'>Baseline Image</h3>
+    <div className='rounded-lg bg-gray-50'>
+      <h3 className='text-sm font-medium text-gray-500 text-center'>Baseline Image</h3>
 
       {hasImage && imageUrl ? (
-        <div className='space-y-3'>
-          <div className='group relative'>
-            <img
-              src={imageUrl}
-              alt='Transformer baseline'
-              className='h-32 w-full cursor-pointer rounded border object-cover transition-opacity hover:opacity-90'
-              onClick={e => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('=== IMAGE CLICK EVENT TRIGGERED ===');
-                handleImageClick();
-              }}
-              onError={e => {
-                console.error('Image failed to load:', e);
-                console.error('Image src was:', imageUrl);
-              }}
-            />
-            <div className='bg-opacity-0 group-hover:bg-opacity-20 pointer-events-none absolute inset-0 flex items-center justify-center rounded bg-black transition-all duration-200'>
-              <span className='text-sm text-white opacity-0 transition-opacity group-hover:opacity-100'>
-                Click to view full size
-              </span>
-            </div>
-          </div>
+        <div className='flex items-center justify-center space-x-4 mt-1'>
+          <button
+            onClick={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleImageClick();
+            }}
+            className='flex items-center justify-center rounded border border-green-400 bg-green-100 p-2 text-sm font-medium text-green-700 transition-colors hover:bg-green-200 disabled:cursor-not-allowed disabled:opacity-50'
+          >
+            <EyeIcon className='h-5 w-5' />
+          </button>
           <button
             onClick={handleDeleteImage}
             disabled={deleting}
-            className='flex w-full items-center justify-center rounded border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50'
+            className='flex items-center justify-center rounded border border-red-200 bg-red-50 p-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50'
           >
-            <TrashIcon className='mr-2 h-4 w-4' />
-            {deleting ? 'Deleting...' : 'Delete Image'}
+            <TrashIcon className='h-5 w-5' />
           </button>
         </div>
       ) : (
-        <div className='space-y-3'>
-          <div className='flex h-32 items-center justify-center rounded border-2 border-dashed border-gray-300 bg-gray-100'>
-            <div className='text-center'>
-              <div className='text-sm text-gray-400'>No baseline image</div>
-            </div>
-          </div>
+        <div className='flex items-center justify-center space-x-4 mt-1'>
           <label className='flex w-full cursor-pointer items-center justify-center rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100'>
             <PlusIcon className='mr-2 h-4 w-4' />
             {uploading ? 'Uploading...' : 'Add Image'}

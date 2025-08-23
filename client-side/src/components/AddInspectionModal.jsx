@@ -58,7 +58,7 @@ function AddInspectionModal({
     }
 
     if (!formData.transformerId.trim()) {
-      newErrors.transformerId = 'Transformer ID is required';
+      newErrors.transformerId = 'Transformer No is required';
     }
 
     if (!formData.inspectedAt) {
@@ -152,7 +152,7 @@ function AddInspectionModal({
               className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
                 errors.branch ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder='Enter branch name'
+              placeholder='Enter Branch Name'
             />
             {errors.branch && (
               <p className='mt-1 text-sm text-red-500'>{errors.branch}</p>
@@ -177,7 +177,7 @@ function AddInspectionModal({
               className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
                 errors.transformerId ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder='Enter transformer No'
+              placeholder='Enter Transformer Number'
             />
             {errors.transformerId && (
               <p className='mt-1 text-sm text-red-500'>

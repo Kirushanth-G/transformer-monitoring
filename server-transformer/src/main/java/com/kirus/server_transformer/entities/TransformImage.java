@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -13,8 +14,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "images")
-public class Image {
+@Table(name = "transformer_images")
+public class TransformImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -27,16 +28,10 @@ public class Image {
     @Column(name = "image_url")
     private String imageUrl;
 
-    @Column(name = "image_type", length = 20)
-    private String imageType; // 'Baseline' or 'Maintenance'
-
-    @Column(name = "environmental_condition", length = 20)
-    private String environmentalCondition; // 'Sunny', 'Cloudy', 'Rainy'
-
     @Column(name = "uploader_name", length = 100)
     private String uploaderName;
 
+    @CreationTimestamp
     @Column(name = "upload_time")
     private LocalDateTime uploadTime;
 }
-

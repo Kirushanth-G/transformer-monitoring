@@ -5,6 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import AddInspectionModal from '../components/AddInspectionModal';
 import EditInspectionModal from '../components/EditInspectionModal';
 import InspectionActionDropdown from '../components/InspectionActionDropdown';
+import TransformerImageDisplay from '../components/TransformerImageDisplay';
 import NotificationManager from '../components/NotificationManager';
 import { useNotifications } from '../hooks/useNotifications';
 import { StarIcon, PlusIcon } from '../components/ui/icons';
@@ -114,6 +115,11 @@ function TransformerDetailPage() {
     } finally {
       setIsSubmittingInspection(false);
     }
+  };
+
+  // Handle viewing inspection details
+  const handleViewInspection = inspection => {
+    navigate(`/inspections/${inspection.id}`);
   };
 
   // Handle editing inspection
@@ -306,7 +312,7 @@ function TransformerDetailPage() {
             </div>
 
             {/* Transformer Info Grid */}
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-4'>
               <div className='rounded-lg bg-gray-50 p-4'>
                 <h3 className='mb-1 text-sm font-medium text-gray-500'>
                   Location
@@ -334,6 +340,13 @@ function TransformerDetailPage() {
                 >
                   {displayValue(transformer.poleNo)}
                 </p>
+              </div>
+              <div className='rounded-lg bg-gray-50 p-4'>
+                <TransformerImageDisplay
+                  transformerId={transformer.id}
+                  showSuccess={showSuccess}
+                  showError={showError}
+                />
               </div>
             </div>
           </div>
@@ -419,7 +432,10 @@ function TransformerDetailPage() {
                           </span>
                         </td>
                         <td className='px-6 py-4 text-center'>
-                          <button className='rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700'>
+                          <button
+                            onClick={() => handleViewInspection(inspection)}
+                            className='rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700'
+                          >
                             View
                           </button>
                         </td>

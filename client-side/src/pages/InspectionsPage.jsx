@@ -8,9 +8,12 @@ import { useNotifications } from '../hooks/useNotifications';
 import { PlusIcon } from '../components/ui/icons';
 import { useFavorites } from '../hooks/useFavorites';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../api/axiosConfig';
 
 function InspectionsPage() {
+  const navigate = useNavigate();
+
   // API hooks
   const {
     inspections,
@@ -53,6 +56,11 @@ function InspectionsPage() {
   const handleCloseEditModal = () => {
     setSelectedInspection(null);
     setIsEditModalOpen(false);
+  };
+
+  // Handle viewing inspection details
+  const handleView = inspection => {
+    navigate(`/inspections/${inspection.id}`);
   };
 
   // Handle delete
@@ -264,6 +272,7 @@ function InspectionsPage() {
         toggleFavorite={toggleFavorite}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onView={handleView}
         isLoading={isSubmitting}
       />
 

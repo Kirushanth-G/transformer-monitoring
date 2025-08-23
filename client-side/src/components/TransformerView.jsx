@@ -126,7 +126,7 @@ function TransformerView({
         {/* Reset Button as Text Link with Bold on Hover */}
         <button
           onClick={resetFilters}
-          className='font-bold text-blue-900 duration-150 hover:text-blue-500 focus:outline-none rounded-lg px-4 py-2 border border-blue-900 hover:border-blue-500'
+          className='inline-flex items-center rounded-lg bg-blue-200 px-4 py-2 font-bold text-[#1e3a8a] hover:bg-blue-300 transition-colors duration-150 focus:outline-none'
         >
           Reset Filters
         </button>
@@ -136,7 +136,7 @@ function TransformerView({
       <div className='overflow-x-auto rounded-lg bg-[#F5F5F5] shadow-md'>
         <table className='min-w-full table-auto'>
           <thead>
-            <tr className='bg-[#B0E0E6] text-[#36454F]'>
+            <tr className='bg-blue-200 text-[#36454F]'>
               <th className='w-8 px-1 py-3 text-center font-bold'> </th>
               <th
                 className='px-1 py-3 text-left font-bold cursor-pointer'

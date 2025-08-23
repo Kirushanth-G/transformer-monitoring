@@ -17,6 +17,8 @@ function InspectionView({
   const [searchField, setSearchField] = useState('inspectionId');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All Status');
+  const [sortField, setSortField] = useState('inspectionId');
+  const [sortOrder, setSortOrder] = useState('desc'); // Default to descending order
 
   // Status color mapping
   const getStatusColor = status => {
@@ -89,6 +91,38 @@ function InspectionView({
     statusFilter,
   ]);
 
+  const handleSort = field => {
+    if (sortField === field) {
+      setSortOrder(prevOrder => (prevOrder === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder('desc'); // Default to descending when switching fields
+    }
+  };
+
+  const sortedInspections = useMemo(() => {
+    const safeInspections = [...filteredInspections];
+    return safeInspections.sort((a, b) => {
+      const aValue = a[sortField] || '';
+      const bValue = b[sortField] || '';
+
+      if (sortOrder === 'asc') {
+        return aValue.localeCompare(bValue);
+      } else {
+        return bValue.localeCompare(aValue);
+      }
+    });
+  }, [filteredInspections, sortField, sortOrder]);
+
+  const formatDate = dateString => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   return (
     <div>
       {/* Filter Controls */}
@@ -99,10 +133,10 @@ function InspectionView({
             <select
               value={searchField}
               onChange={e => setSearchField(e.target.value)}
-              className='w-[150px] border-0 bg-[#F5F5F5] px-3 py-2 text-gray-400 focus:outline-none'
+              className='w-[170px] border-0 bg-[#F5F5F5] px-2 py-2 text-gray-700 focus:outline-none'
             >
-              <option value='inspectionId'>Inspection No.</option>
-              <option value='transformerId'>Transformer No.</option>
+              <option value='inspectionId'>By Inspection No.</option>
+              <option value='transformerId'>By Transformer No.</option>
             </select>
             <div className='w-[1px] self-stretch bg-gray-300'></div>
             <div className='relative flex-grow'>
@@ -111,7 +145,7 @@ function InspectionView({
               </div>
               <input
                 type='text'
-                placeholder={`Search by ${searchField === 'inspectionId' ? 'Inspection No.' : 'Transformer No.'}...`}
+                placeholder={`Search ${searchField === 'inspectionId' ? 'Inspection No.' : 'Transformer No.'}`}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className='w-full border-0 py-2 pr-4 pl-10 focus:outline-none'
@@ -129,9 +163,9 @@ function InspectionView({
           }
         >
           {showFavoritesOnly ? (
-            <StarIcon className='h-7 w-7 text-blue-800' filled={true} />
+            <StarIcon className='h-6 w-6 text-blue-800' filled={true} />
           ) : (
-            <StarIcon className='h-7 w-7 text-gray-400' filled={false} />
+            <StarIcon className='h-6 w-6 text-gray-400' filled={false} />
           )}
         </button>
 
@@ -153,7 +187,7 @@ function InspectionView({
         {/* Reset Button as Text Link with Bold on Hover */}
         <button
           onClick={resetFilters}
-          className='font-bold text-blue-900 duration-150 hover:text-blue-500 focus:outline-none'
+          className='inline-flex items-center rounded-lg bg-blue-200 px-4 py-2 font-bold text-[#1e3a8a] hover:bg-blue-300 transition-colors duration-150 focus:outline-none'
         >
           Reset Filters
         </button>
@@ -163,10 +197,20 @@ function InspectionView({
       <div className='overflow-x-auto rounded-lg bg-[#F5F5F5] shadow-md'>
         <table className='min-w-full table-auto'>
           <thead>
-            <tr className='bg-[#B0E0E6] text-[#36454F]'>
+            <tr className='bg-blue-200 text-[#36454F]'>
               <th className='w-12 px-6 py-3 text-center font-bold'> </th>
               <th className='px-6 py-3 text-left font-bold'>Transformer No.</th>
-              <th className='px-6 py-3 text-left font-bold'>Inspection No.</th>
+              <th
+                className='px-6 py-3 text-left font-bold cursor-pointer'
+                onClick={() => handleSort('inspectionId')}
+              >
+                Inspection No.
+                {sortField === 'inspectionId' && (
+                  <span className='ml-2 text-sm'>
+                    {sortOrder === 'asc' ? '▲' : '▼'}
+                  </span>
+                )}
+              </th>
               <th className='px-6 py-3 text-left font-bold'>Inspected Date</th>
               <th className='px-6 py-3 text-left font-bold'>
                 Maintenance Date
@@ -177,7 +221,7 @@ function InspectionView({
             </tr>
           </thead>
           <tbody className='divide-y divide-gray-200'>
-            {filteredInspections.map((inspection, index) => (
+            {sortedInspections.map((inspection, index) => (
               <tr
                 key={index}
                 className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} transition-colors duration-150 hover:bg-gray-100`}
@@ -230,26 +274,10 @@ function InspectionView({
                   </span>
                 </td>
                 <td className='px-6 py-4'>
-                  <span
-                    className={
-                      isNullValue(inspection.inspectedDate)
-                        ? 'text-gray-400 italic'
-                        : ''
-                    }
-                  >
-                    {displayValue(inspection.inspectedDate)}
-                  </span>
+                  {formatDate(inspection.inspectedAt)}
                 </td>
                 <td className='px-6 py-4'>
-                  <span
-                    className={
-                      isNullValue(inspection.maintenanceDate)
-                        ? 'text-gray-400 italic'
-                        : ''
-                    }
-                  >
-                    {displayValue(inspection.maintenanceDate)}
-                  </span>
+                  {inspection.maintenanceAt ? formatDate(inspection.maintenanceAt) : 'Not Scheduled Yet'}
                 </td>
                 <td className='px-6 py-4'>
                   <span

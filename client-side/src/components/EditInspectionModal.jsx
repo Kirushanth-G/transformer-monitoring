@@ -107,7 +107,7 @@ function EditInspectionModal({
     }
 
     if (!formData.transformerId.trim()) {
-      newErrors.transformerId = 'Transformer ID is required';
+      newErrors.transformerId = 'Transformer No is required';
     }
 
     if (!formData.branch.trim()) {
@@ -219,7 +219,7 @@ function EditInspectionModal({
               className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                 errors.inspectionNo ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder='Enter inspection number'
+              placeholder='Enter Inspection Number'
             />
             {errors.inspectionNo && (
               <p className='mt-1 text-sm text-red-600'>
@@ -234,7 +234,7 @@ function EditInspectionModal({
               htmlFor='transformerId'
               className='mb-1 block text-sm font-medium text-gray-700'
             >
-              Transformer ID *
+              Transformer No *
             </label>
             <input
               type='text'
@@ -246,7 +246,7 @@ function EditInspectionModal({
               className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                 errors.transformerId ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder='Enter transformer ID'
+              placeholder='Enter Transformer No'
             />
             {errors.transformerId && (
               <p className='mt-1 text-sm text-red-600'>
@@ -273,7 +273,7 @@ function EditInspectionModal({
               className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                 errors.branch ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder='Enter branch'
+              placeholder='Enter Branch'
             />
             {errors.branch && (
               <p className='mt-1 text-sm text-red-600'>{errors.branch}</p>

@@ -140,10 +140,10 @@ function InspectionDetailPage() {
                 </div>
                 <div>
                   <h1 className='text-2xl font-bold text-gray-800'>
-                    Inspection #{displayValue(inspection.inspectionNo)}
+                    {displayValue(inspection.inspectionNo)}
                   </h1>
                   <p className='text-gray-600'>
-                    Transformer: {displayValue(inspection.transformerId)}
+                    Transformer No : {displayValue(inspection.transformerId)}
                   </p>
                 </div>
               </div>
@@ -163,24 +163,24 @@ function InspectionDetailPage() {
             </div>
 
             {/* Basic Information Grid */}
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-              <div className='rounded-lg bg-gray-50 p-4'>
-                <h3 className='mb-1 text-sm font-medium text-gray-500'>
+            <div className='grid grid-cols-1 gap-9 md:grid-cols-4'>
+              <div className='rounded-lg bg-gray-200 p-4'>
+                <h3 className='mb-1 text-sm font-medium text-gray-500 text-center'>
                   Inspected Date
                 </h3>
-                <p className='text-lg font-semibold text-gray-900'>
+                <p className='text-lg font-semibold text-gray-900' align='center'>
                   {formatDate(inspection.inspectedAt)}
                 </p>
               </div>
-              <div className='rounded-lg bg-gray-50 p-4'>
-                <h3 className='mb-1 text-sm font-medium text-gray-500'>
+              <div className='rounded-lg bg-gray-200 p-4'>
+                <h3 className='mb-1 text-sm font-medium text-gray-500 text-center'>
                   Maintenance Date
                 </h3>
-                <p className='text-lg font-semibold text-gray-900'>
+                <p className='text-lg font-semibold text-gray-900' align='center'>
                   {formatDate(inspection.maintenanceAt)}
                 </p>
               </div>
-              <div className='rounded-lg bg-gray-50 p-4'>
+              {/* <div className='rounded-lg bg-gray-50 p-4'>
                 <h3 className='mb-1 text-sm font-medium text-gray-500'>
                   Transformer ID
                 </h3>
@@ -189,7 +189,7 @@ function InspectionDetailPage() {
                 >
                   {displayValue(inspection.transformerId)}
                 </p>
-              </div>
+              </div> */}
             </div>
           </div>
 

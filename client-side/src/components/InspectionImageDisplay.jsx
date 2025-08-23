@@ -408,8 +408,8 @@ function InspectionImageDisplay({
     const container = document.createElement('div');
     container.style.cssText = `
       position: relative;
-      width: 95%;
-      height: 90%;
+      width: 90%;
+      height: 80%;
       max-width: 1400px;
       display: flex;
       gap: 4px;
@@ -444,8 +444,9 @@ function InspectionImageDisplay({
     baselineImg.style.cssText = `
       flex: 1;
       width: 100%;
-      object-fit: contain;
-      background: #f8fafc;
+      height: 100%;
+      object-fit: contain; /* Ensure the image is fully visible */
+      background: #f0f0f0ff;
     `;
 
     // Create current image section
@@ -476,8 +477,9 @@ function InspectionImageDisplay({
     currentImg.style.cssText = `
       flex: 1;
       width: 100%;
-      object-fit: contain;
-      background: #f8fafc;
+      height: 100%;
+      object-fit: contain; /* Ensure the image is fully visible */
+      background: #f0f0f0ff;
     `;
 
     // Create close button
@@ -533,26 +535,26 @@ function InspectionImageDisplay({
     });
 
     // Add click handlers
-    modal.addEventListener('click', e => {
+    modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         modal.remove();
         setShowComparison(false);
       }
     });
 
-    closeBtn.addEventListener('click', e => {
+    closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       modal.remove();
       setShowComparison(false);
     });
 
     // Prevent clicks on container from closing modal
-    container.addEventListener('click', e => {
+    container.addEventListener('click', (e) => {
       e.stopPropagation();
     });
 
     // Add ESC key handler
-    const handleEsc = e => {
+    const handleEsc = (e) => {
       if (e.key === 'Escape') {
         modal.remove();
         setShowComparison(false);

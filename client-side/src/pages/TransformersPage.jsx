@@ -105,12 +105,14 @@ function TransformersPage() {
     try {
       // Make DELETE request to remove transformer
       const response = await axios.delete(`/transformers/${transformerId}`);
-
+      // get transformer
+      const transformer = transformers.find(trans => trans.id === transformerId);
+      const transformer_ID = transformer.transformerId;
       if (response.status === 200 || response.status === 204) {
         // Success - show success notification
         showSuccess(
           'Deleted!',
-          `Transformer ${transformerId} has been deleted successfully.`,
+          `Transformer ${transformer_ID} has been deleted successfully.`,
         );
 
         // Refresh the transformers list

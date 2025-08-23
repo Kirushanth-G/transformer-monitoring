@@ -261,7 +261,7 @@ function InspectionView({
                 <td className='px-6 py-4 text-center'>
                   <button
                     onClick={() => onView && onView(inspection)}
-                    className='rounded bg-[#B0E0E6] px-3 py-1 font-bold text-[#566D7E] hover:bg-[#B0CFDE]'
+                    className='rounded bg-blue-600 px-3 py-1 font-bold text-white hover:bg-blue-700'
                   >
                     View
                   </button>

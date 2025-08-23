@@ -62,7 +62,7 @@ function TransformersPage() {
         // You might want to call a refresh function here or update the state
         setTimeout(() => {
           window.location.reload(); // Simple refresh - can be improved with state management
-        }, 1500); // Give time for user to see the notification
+        }, 5000); // Increased time to allow users to read notifications
       }
     } catch (error) {
       console.error('Error saving transformer:', error);
@@ -116,7 +116,7 @@ function TransformersPage() {
         // Refresh the transformers list
         setTimeout(() => {
           window.location.reload(); // Simple refresh - can be improved with state management
-        }, 1500); // Give time for user to see the notification
+        }, 5000); // Increased time to allow users to read notifications
       }
     } catch (error) {
       console.error('Error deleting transformer:', error);
@@ -193,7 +193,7 @@ function TransformersPage() {
         // Refresh the transformers list
         setTimeout(() => {
           window.location.reload(); // Simple refresh - can be improved with state management
-        }, 1500); // Give time for user to see the notification
+        }, 5000); // Increased time to allow users to read notifications
       }
     } catch (error) {
       console.error('Error updating transformer:', error);

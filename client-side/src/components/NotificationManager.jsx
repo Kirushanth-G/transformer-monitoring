@@ -3,7 +3,8 @@ import { CheckIcon, XIcon } from './ui/icons';
 
 function NotificationManager({ notifications, removeNotification }) {
   return (
-    <div className='fixed top-4 right-4 z-50 space-y-2'>
+    <div className='fixed top-4 right-6 z-50 flex flex-col space-y-2'>
+      {/* <div className='space-y-2'></div> */}
       {notifications.map(notification => (
         <Notification
           key={notification.id}
@@ -44,7 +45,7 @@ function Notification({ notification, onClose }) {
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return <CheckIcon className='h-5 w-5 text-green-600' />;
+        return <CheckIcon className='h-5 w-10 text-green-600' />;
       case 'error':
         return <XIcon className='h-5 w-5 text-red-600' />;
       default:
@@ -54,7 +55,7 @@ function Notification({ notification, onClose }) {
 
   return (
     <div
-      className={`animate-slide-in-right relative w-full max-w-sm transform rounded-lg border p-4 shadow-lg transition-all duration-300 ease-in-out ${getNotificationStyles()} `}
+      className={`animate-slide-in-right relative w-72 max-w-sm transform rounded-lg border p-4 shadow-lg transition-all duration-300 ease-in-out ${getNotificationStyles()}`}
     >
       <div className='flex items-start'>
         <div className='flex-shrink-0'>{getIcon()}</div>

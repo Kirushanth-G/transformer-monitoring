@@ -85,10 +85,12 @@ function EditTransformerModal({
   return (
     <div
       ref={modalRef}
-      className='bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black'
+      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center'
       onClick={handleModalClick}
     >
-      <div className='animate-fade-in mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl'>
+    <div 
+      className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
+      <div className='relative animate-fade-in mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl'>
         {/* Header */}
         <div className='mb-4 flex items-center justify-between'>
           <h2 className='text-xl font-semibold text-gray-800'>
@@ -166,7 +168,6 @@ function EditTransformerModal({
               <option value=''>Select type</option>
               <option value='Distribution'>Distribution</option>
               <option value='Bulk'>Bulk</option>
-              <option value='Power'>Power</option>
             </select>
           </div>
 

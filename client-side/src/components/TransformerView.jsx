@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SearchIcon, StarIcon } from './ui/icons';
 import { displayValue, isNullValue } from '../utils/displayHelpers';
 import TransformerActionDropdown from './TransformerActionDropdown';
+import { useNavigate } from 'react-router-dom';
 
 function TransformerView({
   transformers,
@@ -24,26 +25,46 @@ function TransformerView({
   onViewTransformer,
   isDeleting,
 }) {
+  const navigate = useNavigate();
+
   // Use pre-filtered transformers from the filter hook
   const filteredTransformers = transformers;
 
   // Use filter options from the filter hook
   const { locations, types } = filterOptions;
 
+  const [sortOrder, setSortOrder] = useState('asc');
+
+  const handleSort = () => {
+    setSortOrder(prevOrder => (prevOrder === 'asc' ? 'desc' : 'asc'));
+  };
+
+  const sortedTransformers = [...transformers].sort((a, b) => {
+    if (sortOrder === 'asc') {
+      return a.transformerId.localeCompare(b.transformerId);
+    } else {
+      return b.transformerId.localeCompare(a.transformerId);
+    }
+  });
+
+  const handleViewClick = (transformerId) => {
+    navigate(`/transformers/${transformerId}`);
+  };
+
   return (
     <>
       {/* Filter Controls */}
       <div className='mb-6 flex flex-wrap items-center gap-4 rounded-lg bg-[#F5F5F5] p-4 shadow-md'>
         {/* Search Bar - Unified Design */}
-        <div className='w-[400px]'>
+        <div className='w-[450px]'>
           <div className='flex overflow-hidden rounded-md border border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500'>
             <select
               value={searchField}
               onChange={e => setSearchField(e.target.value)}
-              className='w-[150px] border-0 bg-[#F5F5F5] px-3 py-2 text-gray-400 focus:outline-none'
+              className='w-[170px] border-0 bg-[#F5F5F5] px-2 py-2 text-gray-700 focus:outline-none'
             >
-              <option value='id'>Transformer No.</option>
-              <option value='poleNo'>Pole No.</option>
+              <option value='id'>By Transformer No.</option>
+              <option value='poleNo'>By Pole No.</option>
             </select>
             <div className='w-[1px] self-stretch bg-gray-300'></div>
             <div className='relative flex-grow'>
@@ -52,7 +73,9 @@ function TransformerView({
               </div>
               <input
                 type='text'
-                placeholder={`Search by ${searchField === 'id' ? 'Transformer No.' : 'Pole No.'}...`}
+                placeholder={`Search ${
+                  searchField === 'id' ? 'Transformer No.' : 'Pole No.'
+                }`}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className='w-full border-0 py-2 pr-4 pl-10 focus:outline-none'
@@ -70,9 +93,9 @@ function TransformerView({
           }
         >
           {showFavoritesOnly ? (
-            <StarIcon className='h-7 w-7 text-blue-800' filled={true} />
+            <StarIcon className='h-6 w-6 text-blue-800' filled={true} />
           ) : (
-            <StarIcon className='h-7 w-7 text-gray-400' filled={false} />
+            <StarIcon className='h-6 w-6 text-gray-400' filled={false} />
           )}
         </button>
 
@@ -109,7 +132,7 @@ function TransformerView({
         {/* Reset Button as Text Link with Bold on Hover */}
         <button
           onClick={resetFilters}
-          className='font-bold text-blue-900 duration-150 hover:text-blue-500 focus:outline-none'
+          className='font-bold text-blue-900 duration-150 hover:text-blue-500 focus:outline-none rounded-lg px-4 py-2 border border-blue-900 hover:border-blue-500'
         >
           Reset Filters
         </button>
@@ -120,8 +143,16 @@ function TransformerView({
         <table className='min-w-full table-auto'>
           <thead>
             <tr className='bg-[#B0E0E6] text-[#36454F]'>
-              <th className='w-12 px-6 py-3 text-center font-bold'> </th>
-              <th className='px-6 py-3 text-left font-bold'>Transformer No.</th>
+              <th className='w-8 px-1 py-3 text-center font-bold'> </th>
+              <th
+                className='px-1 py-3 text-left font-bold cursor-pointer'
+                onClick={handleSort}
+              >
+                <span>Transformer No.</span>
+                <span className="ml-2 text-sm">
+                  {sortOrder === 'asc' ? '▲' : '▼'}
+                </span>
+              </th>
               <th className='px-6 py-3 text-left font-bold'>Pole No.</th>
               <th className='px-6 py-3 text-left font-bold'>Location</th>
               <th className='px-6 py-3 text-left font-bold'>Type</th>
@@ -130,10 +161,12 @@ function TransformerView({
             </tr>
           </thead>
           <tbody className='divide-y divide-gray-200'>
-            {filteredTransformers.map((transformer, index) => (
+            {sortedTransformers.map((transformer, index) => (
               <tr
                 key={index}
-                className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} transition-colors duration-150 hover:bg-gray-100`}
+                className={`${
+                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                } transition-colors duration-150 hover:bg-gray-100`}
               >
                 <td className='px-6 py-4 text-center'>
                   <button

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { SearchIcon, StarIcon } from './ui/icons';
 import { displayValue, isNullValue } from '../utils/displayHelpers';
 import TransformerActionDropdown from './TransformerActionDropdown';
-import { useNavigate } from 'react-router-dom';
 
 function TransformerView({
   transformers,
@@ -25,7 +24,6 @@ function TransformerView({
   onViewTransformer,
   isDeleting,
 }) {
-  const navigate = useNavigate();
 
   // Use pre-filtered transformers from the filter hook
   const filteredTransformers = transformers;
@@ -46,10 +44,6 @@ function TransformerView({
       return b.transformerId.localeCompare(a.transformerId);
     }
   });
-
-  const handleViewClick = (transformerId) => {
-    navigate(`/transformers/${transformerId}`);
-  };
 
   return (
     <>

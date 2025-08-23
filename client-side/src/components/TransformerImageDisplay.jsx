@@ -3,7 +3,6 @@ import {
   getTransformerImage,
   uploadTransformerImage,
   deleteTransformerImage,
-  createImageUrl,
 } from '../api/imageApi';
 import { PlusIcon, TrashIcon } from './ui/icons';
 
@@ -26,17 +25,17 @@ function TransformerImageDisplay({
 
       setLoading(true);
       try {
-        const imageBlob = await getTransformerImage(transformerId);
-        if (imageBlob && imageBlob.size > 0) {
-          const url = createImageUrl(imageBlob);
-          setImageUrl(url);
+        const imageData = await getTransformerImage(transformerId);
+        if (imageData && imageData.imageUrl) {
+          setImageUrl(imageData.imageUrl);
           setHasImage(true);
         } else {
           setHasImage(false);
           setImageUrl(null);
         }
-      } catch {
+      } catch (error) {
         // Image doesn't exist or error occurred
+        console.log('Image load error:', error);
         setHasImage(false);
         setImageUrl(null);
       } finally {
@@ -47,22 +46,29 @@ function TransformerImageDisplay({
     loadImage();
   }, [transformerId]);
 
+  // No cleanup needed for S3 URLs
+  useEffect(() => {
+    return () => {
+      // S3 URLs don't need cleanup like blob URLs
+    };
+  }, [imageUrl]);
+
   const reloadImage = async () => {
     if (!transformerId) return;
 
     setLoading(true);
     try {
-      const imageBlob = await getTransformerImage(transformerId);
-      if (imageBlob && imageBlob.size > 0) {
-        const url = createImageUrl(imageBlob);
-        setImageUrl(url);
+      const imageData = await getTransformerImage(transformerId);
+      if (imageData && imageData.imageUrl) {
+        setImageUrl(imageData.imageUrl);
         setHasImage(true);
       } else {
         setHasImage(false);
         setImageUrl(null);
       }
-    } catch {
+    } catch (error) {
       // Image doesn't exist or error occurred
+      console.log('Image reload error:', error);
       setHasImage(false);
       setImageUrl(null);
     } finally {
@@ -123,10 +129,165 @@ function TransformerImageDisplay({
   };
 
   const handleImageClick = () => {
+    console.log('Image clicked!');
+    console.log('imageUrl:', imageUrl);
+    console.log('hasImage:', hasImage);
+    console.log('typeof imageUrl:', typeof imageUrl);
+
     if (imageUrl) {
-      // Open image in new window/tab
-      window.open(imageUrl, '_blank');
+      console.log('Opening image in modal:', imageUrl);
+      // Always use modal to keep viewing within the webapp
+      createImageModal(imageUrl);
+    } else {
+      console.error('No image URL available');
+      if (showError) {
+        showError('Error', 'No image available to display');
+      }
     }
+  }; // Create a modal to display the image if popup is blocked
+  const createImageModal = imgUrl => {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('image-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    // Create modal backdrop
+    const modal = document.createElement('div');
+    modal.id = 'image-modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    `;
+
+    // Create image container
+    const imageContainer = document.createElement('div');
+    imageContainer.style.cssText = `
+      position: relative;
+      max-width: 95%;
+      max-height: 95%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: auto;
+    `;
+
+    // Create image
+    const img = document.createElement('img');
+    img.src = imgUrl;
+    img.style.cssText = `
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+      background: white;
+      cursor: auto;
+    `;
+
+    // Create close button
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '✕';
+    closeBtn.style.cssText = `
+      position: absolute;
+      top: -15px;
+      right: -15px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 2px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #374151;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+      z-index: 10001;
+    `;
+
+    // Add hover effect to close button
+    closeBtn.addEventListener('mouseenter', () => {
+      closeBtn.style.background = 'rgba(239, 68, 68, 0.9)';
+      closeBtn.style.color = 'white';
+      closeBtn.style.transform = 'scale(1.1)';
+    });
+
+    closeBtn.addEventListener('mouseleave', () => {
+      closeBtn.style.background = 'rgba(255, 255, 255, 0.95)';
+      closeBtn.style.color = '#374151';
+      closeBtn.style.transform = 'scale(1)';
+    });
+
+    // Create title
+    const title = document.createElement('div');
+    title.innerHTML = 'Baseline Image';
+    title.style.cssText = `
+      position: absolute;
+      top: -50px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    `;
+
+    // Add click handlers
+    modal.addEventListener('click', e => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+
+    closeBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      modal.remove();
+    });
+
+    // Prevent clicks on image container from closing modal
+    imageContainer.addEventListener('click', e => {
+      e.stopPropagation();
+    });
+
+    // Add ESC key handler
+    const handleEsc = e => {
+      if (e.key === 'Escape') {
+        modal.remove();
+        document.removeEventListener('keydown', handleEsc);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+
+    // Assemble modal
+    imageContainer.appendChild(img);
+    imageContainer.appendChild(closeBtn);
+    imageContainer.appendChild(title);
+    modal.appendChild(imageContainer);
+    document.body.appendChild(modal);
+
+    // Add fade-in animation
+    modal.style.opacity = '0';
+    setTimeout(() => {
+      modal.style.transition = 'opacity 0.3s ease';
+      modal.style.opacity = '1';
+    }, 10);
+
+    console.log('Image displayed in modal');
   };
 
   if (loading) {
@@ -153,9 +314,18 @@ function TransformerImageDisplay({
               src={imageUrl}
               alt='Transformer baseline'
               className='h-32 w-full cursor-pointer rounded border object-cover transition-opacity hover:opacity-90'
-              onClick={handleImageClick}
+              onClick={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('=== IMAGE CLICK EVENT TRIGGERED ===');
+                handleImageClick();
+              }}
+              onError={e => {
+                console.error('Image failed to load:', e);
+                console.error('Image src was:', imageUrl);
+              }}
             />
-            <div className='bg-opacity-0 group-hover:bg-opacity-20 absolute inset-0 flex items-center justify-center rounded bg-black transition-all duration-200'>
+            <div className='bg-opacity-0 group-hover:bg-opacity-20 pointer-events-none absolute inset-0 flex items-center justify-center rounded bg-black transition-all duration-200'>
               <span className='text-sm text-white opacity-0 transition-opacity group-hover:opacity-100'>
                 Click to view full size
               </span>

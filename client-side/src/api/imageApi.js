@@ -25,10 +25,8 @@ export const uploadTransformerImage = async (
 };
 
 export const getTransformerImage = async transformerId => {
-  const response = await axios.get(`/images/transformers/${transformerId}`, {
-    responseType: 'blob',
-  });
-  return response.data;
+  const response = await axios.get(`/images/transformers/${transformerId}`);
+  return response.data; // This will return the JSON object with imageUrl
 };
 
 export const deleteTransformerImage = async transformerId => {
@@ -65,10 +63,8 @@ export const uploadInspectionImage = async (
 };
 
 export const getInspectionImage = async inspectionId => {
-  const response = await axios.get(`/images/inspections/${inspectionId}`, {
-    responseType: 'blob',
-  });
-  return response.data;
+  const response = await axios.get(`/images/inspections/${inspectionId}`);
+  return response.data; // This will return the JSON object with imageUrl
 };
 
 export const deleteInspectionImage = async inspectionId => {
@@ -84,9 +80,4 @@ export const checkImageExists = async url => {
   } catch {
     return false;
   }
-};
-
-// Helper function to convert blob to object URL
-export const createImageUrl = blob => {
-  return URL.createObjectURL(blob);
 };

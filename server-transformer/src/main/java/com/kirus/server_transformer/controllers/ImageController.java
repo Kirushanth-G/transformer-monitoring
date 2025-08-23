@@ -22,9 +22,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/images")
-@CrossOrigin(origins = "*")
 public class ImageController {
     @Autowired
     private S3Service s3Service;
@@ -69,15 +69,18 @@ public class ImageController {
                 );
             }
 
-            String imageUrl = s3Service.uploadFile(file);
+            String s3Key = s3Service.uploadFile(file); // This returns just the key now
             TransformImage image = new TransformImage();
             image.setTransformer(transformerOpt.get());
-            image.setImageUrl(imageUrl);
+            image.setImageUrl(s3Key); // Store the S3 key
             image.setUploaderName(uploaderName != null ? uploaderName : "Unknown");
             image.setUploadTime(LocalDateTime.now());
 
             TransformImage savedImage = transformerImageRepository.save(image);
             TransformerImageDTO dto = transformerImageMapper.toDTO(savedImage);
+
+            // Generate pre-signed URL for the response
+            dto.setImageUrl(s3Service.generatePresignedUrl(savedImage.getImageUrl()));
 
             return ResponseEntity.ok().body(dto);
         } catch (Exception e) {
@@ -108,16 +111,19 @@ public class ImageController {
                 );
             }
 
-            String imageUrl = s3Service.uploadFile(file);
+            String s3Key = s3Service.uploadFile(file); // This returns just the key now
             InspectionImage image = new InspectionImage();
             image.setInspection(inspectionOpt.get());
-            image.setImageUrl(imageUrl);
+            image.setImageUrl(s3Key); // Store the S3 key
             image.setEnvironmentalCondition(environmentalCondition);
             image.setUploaderName(uploaderName != null ? uploaderName : "Unknown");
             image.setUploadTime(LocalDateTime.now());
 
             InspectionImage savedImage = inspectionImageRepository.save(image);
             InspectionImageDTO dto = inspectionImageMapper.toDTO(savedImage);
+
+            // Generate pre-signed URL for the response
+            dto.setImageUrl(s3Service.generatePresignedUrl(savedImage.getImageUrl()));
 
             return ResponseEntity.ok().body(dto);
         } catch (Exception e) {
@@ -139,6 +145,8 @@ public class ImageController {
         }
 
         TransformerImageDTO dto = transformerImageMapper.toDTO(images.get(0));
+        // Generate pre-signed URL for frontend access
+        dto.setImageUrl(s3Service.generatePresignedUrl(images.get(0).getImageUrl()));
         return ResponseEntity.ok(dto);
     }
 
@@ -156,6 +164,8 @@ public class ImageController {
         }
 
         InspectionImageDTO dto = inspectionImageMapper.toDTO(images.get(0));
+        // Generate pre-signed URL for frontend access
+        dto.setImageUrl(s3Service.generatePresignedUrl(images.get(0).getImageUrl()));
         return ResponseEntity.ok(dto);
     }
 
@@ -170,6 +180,14 @@ public class ImageController {
         List<TransformImage> images = transformerImageRepository.findByTransformerId(transformerId);
         if (images.isEmpty()) {
             return ResponseEntity.badRequest().body("No image found to delete");
+        }
+
+        // Delete from S3 first
+        try {
+            s3Service.deleteFile(images.get(0).getImageUrl());
+        } catch (Exception e) {
+            // Log but don't fail the operation if S3 delete fails
+            System.err.println("Failed to delete file from S3: " + e.getMessage());
         }
 
         transformerImageRepository.deleteById(images.get(0).getId());
@@ -187,6 +205,14 @@ public class ImageController {
         List<InspectionImage> images = inspectionImageRepository.findByInspectionId(inspectionId);
         if (images.isEmpty()) {
             return ResponseEntity.badRequest().body("No image found to delete");
+        }
+
+        // Delete from S3 first
+        try {
+            s3Service.deleteFile(images.get(0).getImageUrl());
+        } catch (Exception e) {
+            // Log but don't fail the operation if S3 delete fails
+            System.err.println("Failed to delete file from S3: " + e.getMessage());
         }
 
         inspectionImageRepository.deleteById(images.get(0).getId());

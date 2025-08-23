@@ -9,6 +9,7 @@ function InspectionView({
   toggleFavorite,
   onEdit,
   onDelete,
+  onView,
   isLoading,
 }) {
   // Local filter state
@@ -258,7 +259,10 @@ function InspectionView({
                   </span>
                 </td>
                 <td className='px-6 py-4 text-center'>
-                  <button className='rounded bg-[#B0E0E6] px-3 py-1 font-bold text-[#566D7E] hover:bg-[#B0CFDE]'>
+                  <button
+                    onClick={() => onView && onView(inspection)}
+                    className='rounded bg-[#B0E0E6] px-3 py-1 font-bold text-[#566D7E] hover:bg-[#B0CFDE]'
+                  >
                     View
                   </button>
                 </td>

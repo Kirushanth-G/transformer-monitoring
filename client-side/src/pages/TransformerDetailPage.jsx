@@ -5,7 +5,6 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import AddInspectionModal from '../components/AddInspectionModal';
 import EditInspectionModal from '../components/EditInspectionModal';
 import InspectionActionDropdown from '../components/InspectionActionDropdown';
-import InspectionDetailModal from '../components/InspectionDetailModal';
 import TransformerImageDisplay from '../components/TransformerImageDisplay';
 import NotificationManager from '../components/NotificationManager';
 import { useNotifications } from '../hooks/useNotifications';
@@ -25,9 +24,6 @@ function TransformerDetailPage() {
   const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedInspection, setSelectedInspection] = useState(null);
-  const [isInspectionDetailOpen, setIsInspectionDetailOpen] = useState(false);
-  const [selectedInspectionForDetail, setSelectedInspectionForDetail] =
-    useState(null);
   const [isSubmittingInspection, setIsSubmittingInspection] = useState(false); // Fetch transformer details
   useEffect(() => {
     const fetchTransformerDetails = async () => {
@@ -123,14 +119,7 @@ function TransformerDetailPage() {
 
   // Handle viewing inspection details
   const handleViewInspection = inspection => {
-    setSelectedInspectionForDetail(inspection);
-    setIsInspectionDetailOpen(true);
-  };
-
-  // Handle closing inspection detail modal
-  const handleCloseInspectionDetail = () => {
-    setIsInspectionDetailOpen(false);
-    setSelectedInspectionForDetail(null);
+    navigate(`/inspections/${inspection.id}`);
   };
 
   // Handle editing inspection
@@ -493,15 +482,6 @@ function TransformerDetailPage() {
         onSave={handleUpdateInspection}
         inspection={selectedInspection}
         isLoading={isSubmittingInspection}
-      />
-
-      {/* Inspection Detail Modal */}
-      <InspectionDetailModal
-        isOpen={isInspectionDetailOpen}
-        onClose={handleCloseInspectionDetail}
-        inspection={selectedInspectionForDetail}
-        showSuccess={showSuccess}
-        showError={showError}
       />
 
       {/* Notification Manager */}

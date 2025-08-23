@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { XIcon } from './ui/icons';
 
 function EditInspectionModal({
@@ -17,6 +17,9 @@ function EditInspectionModal({
     status: 'Pending',
   });
 
+  const modalRef = useRef(null);
+  const firstInputRef = useRef(null);
+
   const [errors, setErrors] = useState({});
 
   // Status options
@@ -25,12 +28,22 @@ function EditInspectionModal({
   // Reset form when modal opens/closes or inspection changes
   useEffect(() => {
     if (isOpen && inspection) {
-      // Parse inspection data
+      // Helper function to format date to 'YYYY-MM-DDTHH:mm' in local time
+      const formatToLocalDatetime = dateString => {
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      };
+
       const inspectedDate = inspection.inspectedAt
-        ? new Date(inspection.inspectedAt).toISOString().slice(0, 16)
+        ? formatToLocalDatetime(inspection.inspectedAt)
         : '';
       const maintenanceDate = inspection.maintenanceAt
-        ? new Date(inspection.maintenanceAt).toISOString().slice(0, 16)
+        ? formatToLocalDatetime(inspection.maintenanceAt)
         : '';
 
       setFormData({
@@ -44,6 +57,29 @@ function EditInspectionModal({
       setErrors({});
     }
   }, [isOpen, inspection]);
+
+  // Focus management
+  useEffect(() => {
+    if (isOpen && firstInputRef.current) {
+      setTimeout(() => {
+        firstInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen]);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleKeyDown = event => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, onClose]);
 
   // Handle input changes
   const handleInputChange = e => {
@@ -71,7 +107,7 @@ function EditInspectionModal({
     }
 
     if (!formData.transformerId.trim()) {
-      newErrors.transformerId = 'Transformer ID is required';
+      newErrors.transformerId = 'Transformer No is required';
     }
 
     if (!formData.branch.trim()) {
@@ -114,6 +150,12 @@ function EditInspectionModal({
     onSave(submissionData);
   };
 
+  const handleModalClick = e => {
+    if (e.target === modalRef.current) {
+      onClose();
+    }
+  };
+
   // Handle close
   const handleClose = () => {
     setFormData({
@@ -132,24 +174,33 @@ function EditInspectionModal({
   if (!isOpen) return null;
 
   return (
-    <div className='bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black'>
-      <div className='mx-4 w-full max-w-lg rounded-lg bg-white shadow-xl'>
-        <div className='px-6 pt-6 pb-4'>
+    <div
+      ref={modalRef}
+      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center p-4'
+      onClick={handleModalClick}
+    >
+      <div className='absolute inset-0 bg-black/60 backdrop-blur-[2px]'></div>
+      <div
+        className='animate-fade-in relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl'
+        onClick={e => e.stopPropagation()}
+      >
+        <div className='p-4 sm:p-6'>
           {/* Header */}
           <div className='mb-4 flex items-center justify-between'>
-            <h3 className='text-lg font-medium text-gray-900'>
+            <h2 className='text-xl font-semibold text-gray-800'>
               Edit Inspection
-            </h3>
+            </h2>
             <button
               onClick={handleClose}
-              className='rounded-md p-2 text-gray-400 hover:text-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none'
+              disabled={isLoading}
+              className='rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none'
             >
               <XIcon className='h-5 w-5' />
             </button>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className='space-y-4'>
+          <form onSubmit={handleSubmit} className='space-y-3'>
             {/* Inspection Number */}
             <div>
               <label
@@ -159,15 +210,17 @@ function EditInspectionModal({
                 Inspection Number *
               </label>
               <input
+                ref={firstInputRef}
                 type='text'
                 id='inspectionNo'
                 name='inspectionNo'
                 value={formData.inspectionNo}
                 onChange={handleInputChange}
+                disabled={isLoading}
                 className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                   errors.inspectionNo ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder='Enter inspection number'
+                placeholder='Enter Inspection Number'
               />
               {errors.inspectionNo && (
                 <p className='mt-1 text-sm text-red-600'>
@@ -182,7 +235,7 @@ function EditInspectionModal({
                 htmlFor='transformerId'
                 className='mb-1 block text-sm font-medium text-gray-700'
               >
-                Transformer ID *
+                Transformer No *
               </label>
               <input
                 type='text'
@@ -190,10 +243,11 @@ function EditInspectionModal({
                 name='transformerId'
                 value={formData.transformerId}
                 onChange={handleInputChange}
+                disabled={isLoading}
                 className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                   errors.transformerId ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder='Enter transformer ID'
+                placeholder='Enter Transformer No'
               />
               {errors.transformerId && (
                 <p className='mt-1 text-sm text-red-600'>
@@ -216,10 +270,11 @@ function EditInspectionModal({
                 name='branch'
                 value={formData.branch}
                 onChange={handleInputChange}
+                disabled={isLoading}
                 className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                   errors.branch ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder='Enter branch'
+                placeholder='Enter Branch'
               />
               {errors.branch && (
                 <p className='mt-1 text-sm text-red-600'>{errors.branch}</p>
@@ -240,6 +295,7 @@ function EditInspectionModal({
                 name='inspectedAt'
                 value={formData.inspectedAt}
                 onChange={handleInputChange}
+                disabled={isLoading}
                 className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                   errors.inspectedAt ? 'border-red-500' : 'border-gray-300'
                 }`}
@@ -265,6 +321,7 @@ function EditInspectionModal({
                 name='maintenanceAt'
                 value={formData.maintenanceAt}
                 onChange={handleInputChange}
+                disabled={isLoading}
                 className='w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none'
               />
             </div>
@@ -282,6 +339,7 @@ function EditInspectionModal({
                 name='status'
                 value={formData.status}
                 onChange={handleInputChange}
+                disabled={isLoading}
                 className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                   errors.status ? 'border-red-500' : 'border-gray-300'
                 }`}
@@ -296,31 +354,26 @@ function EditInspectionModal({
                 <p className='mt-1 text-sm text-red-600'>{errors.status}</p>
               )}
             </div>
-          </form>
-        </div>
 
-        {/* Footer */}
-        <div className='flex flex-row-reverse gap-3 bg-gray-50 px-6 py-3'>
-          <button
-            type='submit'
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className={`rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white shadow-sm focus:ring-2 focus:ring-offset-2 focus:outline-none ${
-              isLoading
-                ? 'cursor-not-allowed bg-gray-400'
-                : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-            }`}
-          >
-            {isLoading ? 'Updating...' : 'Update Inspection'}
-          </button>
-          <button
-            type='button'
-            onClick={handleClose}
-            disabled={isLoading}
-            className='rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none'
-          >
-            Cancel
-          </button>
+            {/* Actions */}
+            <div className='flex justify-end space-x-3 pt-3'>
+              <button
+                type='button'
+                onClick={handleClose}
+                disabled={isLoading}
+                className='rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+              >
+                Cancel
+              </button>
+              <button
+                type='submit'
+                disabled={isLoading}
+                className='rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+              >
+                {isLoading ? 'Updating...' : 'Update Inspection'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

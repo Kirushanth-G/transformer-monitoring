@@ -41,11 +41,11 @@ function InspectionsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle pagination
-  const handlePageChange = (newPage) => {
+  const handlePageChange = newPage => {
     goToPage(newPage);
   };
 
-  const handlePageSizeChange = (newSize) => {
+  const handlePageSizeChange = newSize => {
     changePageSize(newSize);
   };
 
@@ -81,9 +81,14 @@ function InspectionsPage() {
     setIsSubmitting(true);
     try {
       const result = await deleteInspection(id);
+      // assign inspection id to inspection_ID
+      const inspection_ID = inspections.find(ins => ins.id === id);
 
       if (result.success) {
-        showSuccess('Success!', 'Inspection has been deleted successfully.');
+        showSuccess(
+          'Success!',
+          `Inspection ${inspection_ID.inspectionNo} has been deleted successfully.`,
+        );
         refetch(); // Refresh the list
       } else {
         showError('Delete Failed', result.error);
@@ -277,7 +282,7 @@ function InspectionsPage() {
       </div>
 
       {/* Inspection View Component */}
-      <div className="bg-white rounded-lg shadow-sm">
+      <div className='rounded-lg bg-white shadow-sm'>
         <InspectionView
           inspections={inspections}
           favorites={favorites}

@@ -67,7 +67,7 @@ function EditTransformerModal({
 
     // Basic validation
     if (!formData.transformerId.trim()) {
-      alert('Transformer ID is required');
+      alert('Transformer No is required');
       return;
     }
 
@@ -85,10 +85,12 @@ function EditTransformerModal({
   return (
     <div
       ref={modalRef}
-      className='bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black'
+      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center'
       onClick={handleModalClick}
     >
-      <div className='animate-fade-in mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl'>
+    <div 
+      className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
+      <div className='relative animate-fade-in mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl'>
         {/* Header */}
         <div className='mb-4 flex items-center justify-between'>
           <h2 className='text-xl font-semibold text-gray-800'>
@@ -111,7 +113,7 @@ function EditTransformerModal({
               htmlFor='transformerId'
               className='mb-1 block text-sm font-medium text-gray-700'
             >
-              Transformer ID *
+              Transformer No *
             </label>
             <input
               ref={firstInputRef}
@@ -122,7 +124,7 @@ function EditTransformerModal({
               onChange={handleInputChange}
               disabled={isLoading}
               className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100'
-              placeholder='Enter transformer ID'
+              placeholder='Enter Transformer No'
               required
             />
           </div>
@@ -143,7 +145,7 @@ function EditTransformerModal({
               onChange={handleInputChange}
               disabled={isLoading}
               className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100'
-              placeholder='Enter location'
+              placeholder='Enter Location'
             />
           </div>
 
@@ -166,7 +168,6 @@ function EditTransformerModal({
               <option value=''>Select type</option>
               <option value='Distribution'>Distribution</option>
               <option value='Bulk'>Bulk</option>
-              <option value='Power'>Power</option>
             </select>
           </div>
 
@@ -186,7 +187,7 @@ function EditTransformerModal({
               onChange={handleInputChange}
               disabled={isLoading}
               className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100'
-              placeholder='Enter pole number'
+              placeholder='Enter Pole Number'
             />
           </div>
 

@@ -7,19 +7,19 @@ function Topbar() {
   const [notifications, setNotifications] = useState([
     {
       id: 1,
-      message: 'New transformer inspection scheduled for Optimus Prime',
+      message: 'New transformer inspection scheduled for T5',
       time: '10 minutes ago',
       isRead: false,
     },
     {
       id: 2,
-      message: 'Maintenance alert for Transformer #210292G',
+      message: 'Maintenance alert for Transformer T1',
       time: '2 hours ago',
       isRead: false,
     },
     {
       id: 3,
-      message: 'Inspection report for Megatron is ready for review',
+      message: 'Inspection report for T3 is ready for review',
       time: 'Yesterday',
       isRead: true,
     },

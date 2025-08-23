@@ -5,24 +5,78 @@ export const getInspections = async (page = 0, size = 10) => {
   const response = await axios.get('/inspections', {
     params: { page, size },
   });
-  return response.data;
+
+  console.log('API Response for getInspections:', response.data);
+
+  // Check if response is already paginated
+  if (
+    response.data &&
+    response.data.content &&
+    Array.isArray(response.data.content)
+  ) {
+    return response.data;
+  }
+
+  // If response is a direct array (backend not yet implementing pagination)
+  if (Array.isArray(response.data)) {
+    console.warn(
+      'Backend returning array instead of paginated response, creating mock pagination',
+    );
+    const startIndex = page * size;
+    const endIndex = startIndex + size;
+    const paginatedData = response.data.slice(startIndex, endIndex);
+
+    return {
+      content: paginatedData,
+      pageNumber: page,
+      pageSize: size,
+      totalElements: response.data.length,
+      totalPages: Math.ceil(response.data.length / size),
+      first: page === 0,
+      last: endIndex >= response.data.length,
+      empty: paginatedData.length === 0,
+    };
+  }
+
+  // If neither, throw error
+  throw new Error('Unexpected response format from backend');
 };
 
 // Get all inspections (for backwards compatibility with existing code)
 export const getAllInspections = async () => {
-  let allInspections = [];
-  let page = 0;
-  const size = 100; // Large page size to minimize requests
-  let hasMore = true;
+  try {
+    // Try to get the first page to see the response format
+    const firstPageResponse = await getInspections(0, 100);
 
-  while (hasMore) {
-    const pagedResponse = await getInspections(page, size);
-    allInspections = [...allInspections, ...pagedResponse.content];
-    hasMore = !pagedResponse.last;
-    page++;
+    // If it's a mock paginated response (backend returning array), just get all data directly
+    if (firstPageResponse.totalElements <= 100) {
+      return firstPageResponse.content;
+    }
+
+    // If it's truly paginated, collect all pages
+    let allInspections = [...firstPageResponse.content];
+    let page = 1;
+    let hasMore = !firstPageResponse.last;
+
+    while (hasMore) {
+      const pagedResponse = await getInspections(page, 100);
+      allInspections = [...allInspections, ...pagedResponse.content];
+      hasMore = !pagedResponse.last;
+      page++;
+    }
+
+    return allInspections;
+  } catch (error) {
+    console.error('Error in getAllInspections:', error);
+    // Fallback: try to get data directly without pagination
+    try {
+      const response = await axios.get('/inspections');
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (fallbackError) {
+      console.error('Fallback also failed:', fallbackError);
+      return [];
+    }
   }
-
-  return allInspections;
 };
 
 // Get inspection by ID

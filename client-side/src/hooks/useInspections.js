@@ -183,6 +183,21 @@ export const usePaginatedInspections = (initialPage = 0, initialSize = 10) => {
 
         const pagedResponse = await getInspections(page, size);
 
+        // Check if we got valid paginated response
+        if (
+          !pagedResponse ||
+          !pagedResponse.content ||
+          !Array.isArray(pagedResponse.content)
+        ) {
+          console.warn(
+            'Invalid paginated response, falling back to mock data:',
+            pagedResponse,
+          );
+          throw new Error(
+            'Invalid response format: expected paginated response with content array',
+          );
+        }
+
         // Transform the content data
         const transformedData = pagedResponse.content.map(inspection => ({
           id: inspection.id,

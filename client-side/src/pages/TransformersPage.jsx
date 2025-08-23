@@ -82,10 +82,9 @@ function TransformersPage() {
         `Transformer ${transformerData.transformerId} has been saved successfully.`,
       );
 
-        handleCloseModal(); // close modal
-
-        refetch();
-      }
+      // Close modal and refresh data
+      handleCloseModal();
+      refetch();
     } catch (error) {
       console.error('Error saving transformer:', error);
 
@@ -128,17 +127,15 @@ function TransformersPage() {
     const transformer = transformers.find(trans => trans.id === transformer_Id);
     try {
       // Make DELETE request to remove transformer
-      const response = await axios.delete(`/transformers/${transformer_Id}`);
-      
-      if (response.status === 200 || response.status === 204) {
-        // Success - show success notification
-        showSuccess(
-          'Deleted!',
-          `Transformer ${transformer?.transformerId} has been deleted successfully.`,
-        );
+      await deleteTransformer(transformer_Id);
 
-        refetch(); 
-      }
+      // Success - show success notification
+      showSuccess(
+        'Deleted!',
+        `Transformer ${transformer?.transformerId} has been deleted successfully.`,
+      );
+
+      refetch();
     } catch (error) {
       console.error('Error deleting transformer:', error);
 
@@ -204,19 +201,9 @@ function TransformersPage() {
         `Transformer ${updatedData.transformerId} has been updated successfully.`,
       );
 
-      if (response.status === 200 || response.status === 204) {
-        // Success - show success notification
-        showSuccess(
-          'Updated!',
-          `Transformer ${updatedData.transformerId} has been updated successfully.`,
-        );
-
-        // Close modal
-        handleCloseEditModal();
-
-        // Refresh the transformers list
-        refetch();
-      }
+      // Close modal and refresh data
+      handleCloseEditModal();
+      refetch();
     } catch (error) {
       console.error('Error updating transformer:', error);
 

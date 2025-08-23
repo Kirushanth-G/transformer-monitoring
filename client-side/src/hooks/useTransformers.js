@@ -69,6 +69,29 @@ export const usePaginatedTransformers = (initialPage = 0, initialSize = 10) => {
 
         const pagedResponse = await getTransformers(page, size);
 
+        // Check if we got valid paginated response
+        if (
+          !pagedResponse ||
+          !pagedResponse.content ||
+          !Array.isArray(pagedResponse.content)
+        ) {
+          console.warn(
+            'Invalid paginated response, falling back to empty array:',
+            pagedResponse,
+          );
+          setTransformers([]);
+          setPagination({
+            pageNumber: 0,
+            pageSize: size,
+            totalElements: 0,
+            totalPages: 0,
+            first: true,
+            last: true,
+            empty: true,
+          });
+          return;
+        }
+
         // Transform the content data
         const transformedData = pagedResponse.content.map(transformer => ({
           id: transformer.id,

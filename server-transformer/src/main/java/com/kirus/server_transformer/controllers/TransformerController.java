@@ -1,6 +1,7 @@
 package com.kirus.server_transformer.controllers;
 
 import com.kirus.server_transformer.dtos.TransformerDto;
+import com.kirus.server_transformer.dtos.TransformerWithInspectionsDto;
 import com.kirus.server_transformer.entities.Transformer;
 import com.kirus.server_transformer.mappers.TransformerMapper;
 import com.kirus.server_transformer.repositories.TransformerRepository;
@@ -28,12 +29,12 @@ public class TransformerController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TransformerDto> getTransformerById(@PathVariable Long id) {
+    public ResponseEntity<TransformerWithInspectionsDto> getTransformerById(@PathVariable Long id) {
         Transformer transformer = transformerRepository.findById(id).orElse(null);
         if (transformer == null) {
             return ResponseEntity.notFound().build();
         }
-        TransformerDto transformerDto = transformerMapper.toDto(transformer);
+        TransformerWithInspectionsDto transformerDto = transformerMapper.toDtoWithInspections(transformer);
         return ResponseEntity.ok(transformerDto);
     }
 

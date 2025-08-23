@@ -1,18 +1,32 @@
 spring:
   application:
     name: server-transformer
+  profiles:
+    active: local
 
   datasource:
-    url: jdbc:postgresql://trolley.proxy.rlwy.net:55929/railway?sslmode=require
-    username: ${PSQL_USER}
-    password: ${PSQL_PASSWORD}
+    url: jdbc:postgresql://db-powergrid.cj8w82u2a1vs.ap-southeast-1.rds.amazonaws.com/db-transformer
+    username: postgres
+    password: 3103Kiru
     driver-class-name: org.postgresql.Driver
 
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        use_sql_comments: true
+#  jpa:
+#    hibernate:
+#      ddl-auto: validate
+#    show-sql: true
+#    properties:
+#      hibernate:
+#        format_sql: true
+#        use_sql_comments: true
+
+#cloud:
+#    aws:
+#        region:
+#          static: ap-southeast-1
+#        credentials:
+#          access-key: ${AWS_ACCESS_KEY}
+#          secret-key: ${AWS_SECRET_KEY}
+#
+#aws:
+#    bucket:
+#        name: power-grid

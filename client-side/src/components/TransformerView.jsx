@@ -22,6 +22,7 @@ function TransformerView({
   resetFilters,
   onDeleteTransformer,
   onEditTransformer,
+  onViewTransformer,
   isDeleting,
 }) {
   const navigate = useNavigate();
@@ -235,8 +236,8 @@ function TransformerView({
                 </td>
                 <td className='px-6 py-4 text-center'>
                   <button
-                    onClick={() => handleViewClick(transformer.id)}
-                    className='rounded bg-[#B0E0E6] px-3 py-1 font-bold text-[#566D7E] hover:bg-[#B0CFDE]'
+                    onClick={() => onViewTransformer(transformer)}
+                    className='rounded bg-[#B0E0E6] px-3 py-1 font-bold text-[#566D7E] transition-colors hover:bg-[#B0CFDE]'
                   >
                     View
                   </button>

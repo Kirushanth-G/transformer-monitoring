@@ -1,11 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { SearchIcon, StarIcon, DotsVerticalIcon } from './ui/icons';
+import { SearchIcon, StarIcon } from './ui/icons';
 import { displayValue, isNullValue } from '../utils/displayHelpers';
+import InspectionActionDropdown from './InspectionActionDropdown';
 
-function InspectionView({ 
-  inspections, 
-  favorites, 
-  toggleFavorite }) {
+function InspectionView({
+  inspections,
+  favorites,
+  toggleFavorite,
+  onEdit,
+  onDelete,
+  onView,
+  isLoading,
+}) {
   // Local filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState('inspectionId');
@@ -93,7 +99,7 @@ function InspectionView({
             <select
               value={searchField}
               onChange={e => setSearchField(e.target.value)}
-              className='w-[150px] appearance-none border-0 bg-[#F5F5F5] px-3 py-2 text-gray-400 focus:outline-none'
+              className='w-[150px] border-0 bg-[#F5F5F5] px-3 py-2 text-gray-400 focus:outline-none'
             >
               <option value='inspectionId'>Inspection No.</option>
               <option value='transformerId'>Transformer No.</option>
@@ -253,14 +259,20 @@ function InspectionView({
                   </span>
                 </td>
                 <td className='px-6 py-4 text-center'>
-                  <button className='rounded bg-[#B0E0E6] px-3 py-1 font-bold text-[#566D7E] hover:bg-[#B0CFDE]'>
+                  <button
+                    onClick={() => onView && onView(inspection)}
+                    className='rounded bg-[#B0E0E6] px-3 py-1 font-bold text-[#566D7E] hover:bg-[#B0CFDE]'
+                  >
                     View
                   </button>
                 </td>
                 <td className='px-3 py-4 text-center'>
-                  <button className='rounded-full p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none'>
-                    <DotsVerticalIcon />
-                  </button>
+                  <InspectionActionDropdown
+                    inspection={inspection}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    isLoading={isLoading}
+                  />
                 </td>
               </tr>
             ))}

@@ -40,7 +40,7 @@ public class Transformer {
     private String poleNo;
 
     @OneToMany(mappedBy = "transformer", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Image> images = new ArrayList<>();
+    private List<TransformImage> transformerImages = new ArrayList<>();
 
     @OneToMany(mappedBy = "transformer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Inspection> inspections = new ArrayList<>();

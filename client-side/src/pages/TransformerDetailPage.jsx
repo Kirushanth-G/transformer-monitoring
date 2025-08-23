@@ -313,7 +313,7 @@ function TransformerDetailPage() {
 
             {/* Transformer Info Grid */}
             <div className='grid grid-cols-1 gap-6 md:grid-cols-5'>
-              <div className='rounded-lg bg-gray-50 p-4'>
+              <div className='rounded-lg bg-gray-200 p-4'>
                 <h3 className='mb-1 text-sm font-medium text-gray-500 text-center'>
                   Location
                 </h3>
@@ -323,7 +323,7 @@ function TransformerDetailPage() {
                   {displayValue(transformer.location)}
                 </p>
               </div>
-              <div className='rounded-lg bg-gray-50 p-4'>
+              <div className='rounded-lg bg-gray-200 p-4'>
                 <h3 className='mb-1 text-sm font-medium text-gray-500 text-center'>Type</h3>
                 <p
                   className={`text-lg font-semibold ${isNullValue(transformer.type) ? 'text-gray-400 italic' : 'text-gray-900 text-center'}`}
@@ -331,7 +331,7 @@ function TransformerDetailPage() {
                   {displayValue(transformer.type)}
                 </p>
               </div>
-              <div className='rounded-lg bg-gray-50 p-4'>
+              <div className='rounded-lg bg-gray-200 p-4'>
                 <h3 className='mb-1 text-sm font-medium text-gray-500 text-center'>
                   Pole Number
                 </h3>
@@ -341,7 +341,7 @@ function TransformerDetailPage() {
                   {displayValue(transformer.poleNo)}
                 </p>
               </div>
-              <div className='rounded-lg bg-gray-50 p-4'>
+              <div className='rounded-lg bg-gray-200 p-4'>
                 <TransformerImageDisplay
                   transformerId={transformer.id}
                   showSuccess={showSuccess}

@@ -176,203 +176,205 @@ function EditInspectionModal({
   return (
     <div
       ref={modalRef}
-      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center'
+      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center p-4'
       onClick={handleModalClick}
     >
       <div className='absolute inset-0 bg-black/60 backdrop-blur-[2px]'></div>
       <div
-        className='relative animate-fade-in mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl'
+        className='animate-fade-in relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl'
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className='mb-4 flex items-center justify-between'>
-          <h2 className='text-xl font-semibold text-gray-800'>
-            Edit Inspection
-          </h2>
-          <button
-            onClick={handleClose}
-            disabled={isLoading}
-            className='rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none'
-          >
-            <XIcon className='h-5 w-5' />
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className='space-y-4'>
-          {/* Inspection Number */}
-          <div>
-            <label
-              htmlFor='inspectionNo'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Inspection Number *
-            </label>
-            <input
-              ref={firstInputRef}
-              type='text'
-              id='inspectionNo'
-              name='inspectionNo'
-              value={formData.inspectionNo}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                errors.inspectionNo ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder='Enter Inspection Number'
-            />
-            {errors.inspectionNo && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.inspectionNo}
-              </p>
-            )}
-          </div>
-
-          {/* Transformer ID */}
-          <div>
-            <label
-              htmlFor='transformerId'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Transformer No *
-            </label>
-            <input
-              type='text'
-              id='transformerId'
-              name='transformerId'
-              value={formData.transformerId}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                errors.transformerId ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder='Enter Transformer No'
-            />
-            {errors.transformerId && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.transformerId}
-              </p>
-            )}
-          </div>
-
-          {/* Branch */}
-          <div>
-            <label
-              htmlFor='branch'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Branch *
-            </label>
-            <input
-              type='text'
-              id='branch'
-              name='branch'
-              value={formData.branch}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                errors.branch ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder='Enter Branch'
-            />
-            {errors.branch && (
-              <p className='mt-1 text-sm text-red-600'>{errors.branch}</p>
-            )}
-          </div>
-
-          {/* Inspection Date and Time */}
-          <div>
-            <label
-              htmlFor='inspectedAt'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Inspection Date & Time *
-            </label>
-            <input
-              type='datetime-local'
-              id='inspectedAt'
-              name='inspectedAt'
-              value={formData.inspectedAt}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                errors.inspectedAt ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.inspectedAt && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.inspectedAt}
-              </p>
-            )}
-          </div>
-
-          {/* Maintenance Date and Time */}
-          <div>
-            <label
-              htmlFor='maintenanceAt'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Maintenance Date & Time
-            </label>
-            <input
-              type='datetime-local'
-              id='maintenanceAt'
-              name='maintenanceAt'
-              value={formData.maintenanceAt}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              className='w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none'
-            />
-          </div>
-
-          {/* Status */}
-          <div>
-            <label
-              htmlFor='status'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Status *
-            </label>
-            <select
-              id='status'
-              name='status'
-              value={formData.status}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                errors.status ? 'border-red-500' : 'border-gray-300'
-              }`}
-            >
-              {statusOptions.map(status => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-            {errors.status && (
-              <p className='mt-1 text-sm text-red-600'>{errors.status}</p>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className='flex justify-end space-x-3 pt-4'>
+        <div className='p-4 sm:p-6'>
+          {/* Header */}
+          <div className='mb-4 flex items-center justify-between'>
+            <h2 className='text-xl font-semibold text-gray-800'>
+              Edit Inspection
+            </h2>
             <button
-              type='button'
               onClick={handleClose}
               disabled={isLoading}
-              className='rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+              className='rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none'
             >
-              Cancel
-            </button>
-            <button
-              type='submit'
-              disabled={isLoading}
-              className='rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
-            >
-              {isLoading ? 'Updating...' : 'Update Inspection'}
+              <XIcon className='h-5 w-5' />
             </button>
           </div>
-        </form>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className='space-y-3'>
+            {/* Inspection Number */}
+            <div>
+              <label
+                htmlFor='inspectionNo'
+                className='mb-1 block text-sm font-medium text-gray-700'
+              >
+                Inspection Number *
+              </label>
+              <input
+                ref={firstInputRef}
+                type='text'
+                id='inspectionNo'
+                name='inspectionNo'
+                value={formData.inspectionNo}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                  errors.inspectionNo ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder='Enter Inspection Number'
+              />
+              {errors.inspectionNo && (
+                <p className='mt-1 text-sm text-red-600'>
+                  {errors.inspectionNo}
+                </p>
+              )}
+            </div>
+
+            {/* Transformer ID */}
+            <div>
+              <label
+                htmlFor='transformerId'
+                className='mb-1 block text-sm font-medium text-gray-700'
+              >
+                Transformer No *
+              </label>
+              <input
+                type='text'
+                id='transformerId'
+                name='transformerId'
+                value={formData.transformerId}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                  errors.transformerId ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder='Enter Transformer No'
+              />
+              {errors.transformerId && (
+                <p className='mt-1 text-sm text-red-600'>
+                  {errors.transformerId}
+                </p>
+              )}
+            </div>
+
+            {/* Branch */}
+            <div>
+              <label
+                htmlFor='branch'
+                className='mb-1 block text-sm font-medium text-gray-700'
+              >
+                Branch *
+              </label>
+              <input
+                type='text'
+                id='branch'
+                name='branch'
+                value={formData.branch}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                  errors.branch ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder='Enter Branch'
+              />
+              {errors.branch && (
+                <p className='mt-1 text-sm text-red-600'>{errors.branch}</p>
+              )}
+            </div>
+
+            {/* Inspection Date and Time */}
+            <div>
+              <label
+                htmlFor='inspectedAt'
+                className='mb-1 block text-sm font-medium text-gray-700'
+              >
+                Inspection Date & Time *
+              </label>
+              <input
+                type='datetime-local'
+                id='inspectedAt'
+                name='inspectedAt'
+                value={formData.inspectedAt}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                  errors.inspectedAt ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.inspectedAt && (
+                <p className='mt-1 text-sm text-red-600'>
+                  {errors.inspectedAt}
+                </p>
+              )}
+            </div>
+
+            {/* Maintenance Date and Time */}
+            <div>
+              <label
+                htmlFor='maintenanceAt'
+                className='mb-1 block text-sm font-medium text-gray-700'
+              >
+                Maintenance Date & Time
+              </label>
+              <input
+                type='datetime-local'
+                id='maintenanceAt'
+                name='maintenanceAt'
+                value={formData.maintenanceAt}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                className='w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none'
+              />
+            </div>
+
+            {/* Status */}
+            <div>
+              <label
+                htmlFor='status'
+                className='mb-1 block text-sm font-medium text-gray-700'
+              >
+                Status *
+              </label>
+              <select
+                id='status'
+                name='status'
+                value={formData.status}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                  errors.status ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
+                {statusOptions.map(status => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+              {errors.status && (
+                <p className='mt-1 text-sm text-red-600'>{errors.status}</p>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className='flex justify-end space-x-3 pt-3'>
+              <button
+                type='button'
+                onClick={handleClose}
+                disabled={isLoading}
+                className='rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+              >
+                Cancel
+              </button>
+              <button
+                type='submit'
+                disabled={isLoading}
+                className='rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+              >
+                {isLoading ? 'Updating...' : 'Update Inspection'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -68,9 +68,11 @@ function InspectionsPage() {
     setIsSubmitting(true);
     try {
       const result = await deleteInspection(id);
+      // assign inspection id to inspection_ID
+      const inspection_ID = inspections.find(ins => ins.id === id);
 
       if (result.success) {
-        showSuccess('Success!', 'Inspection has been deleted successfully.');
+        showSuccess('Success!', `Inspection ${inspection_ID.inspectionNo} has been deleted successfully.`);
         refetch(); // Refresh the list
       } else {
         showError('Delete Failed', result.error);

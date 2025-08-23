@@ -3,27 +3,31 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import AddInspectionModal from '../components/AddInspectionModal';
 import EditInspectionModal from '../components/EditInspectionModal';
 import NotificationManager from '../components/NotificationManager';
-import { useInspections } from '../hooks/useInspections';
+import { usePaginatedInspections } from '../hooks/useInspections';
 import { useNotifications } from '../hooks/useNotifications';
 import { PlusIcon } from '../components/ui/icons';
 import { useFavorites } from '../hooks/useFavorites';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from '../api/axiosConfig';
+import { createInspection } from '../api/inspectionApi';
+import Pagination from '../components/Pagination';
 
 function InspectionsPage() {
   const navigate = useNavigate();
 
-  // API hooks
+  // API hooks - use paginated inspections with 10 items per page
   const {
     inspections,
     loading,
     error,
     isUsingMockData,
+    pagination,
+    goToPage,
+    changePageSize,
     refetch,
     deleteInspection,
     updateInspection,
-  } = useInspections();
+  } = usePaginatedInspections(0, 10);
   const { notifications, removeNotification, showSuccess, showError } =
     useNotifications();
 
@@ -35,6 +39,15 @@ function InspectionsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedInspection, setSelectedInspection] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Handle pagination
+  const handlePageChange = (newPage) => {
+    goToPage(newPage);
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    changePageSize(newSize);
+  };
 
   // Handle opening the add modal
   const handleOpenAddModal = () => {
@@ -88,21 +101,19 @@ function InspectionsPage() {
     setIsSubmitting(true);
     try {
       // Make POST request to save inspection
-      const response = await axios.post('/inspections', inspectionData);
+      await createInspection(inspectionData);
 
-      if (response.status === 200 || response.status === 201) {
-        // Success - show success notification
-        showSuccess(
-          'Success!',
-          `Inspection for transformer ${inspectionData.transformerId} has been added successfully.`,
-        );
+      // Success - show success notification
+      showSuccess(
+        'Success!',
+        `Inspection for transformer ${inspectionData.transformerId} has been added successfully.`,
+      );
 
-        // Close modal
-        handleCloseAddModal();
+      // Close modal
+      handleCloseAddModal();
 
-        // Refresh the inspections list
-        refetch();
-      }
+      // Refresh the inspections list
+      refetch();
     } catch (error) {
       console.error('Error saving inspection:', error);
 
@@ -266,15 +277,24 @@ function InspectionsPage() {
       </div>
 
       {/* Inspection View Component */}
-      <InspectionView
-        inspections={inspections}
-        favorites={favorites}
-        toggleFavorite={toggleFavorite}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onView={handleView}
-        isLoading={isSubmitting}
-      />
+      <div className="bg-white rounded-lg shadow-sm">
+        <InspectionView
+          inspections={inspections}
+          favorites={favorites}
+          toggleFavorite={toggleFavorite}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onView={handleView}
+          isLoading={isSubmitting}
+        />
+
+        {/* Pagination Component */}
+        <Pagination
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      </div>
 
       {/* Add Inspection Modal */}
       <AddInspectionModal

@@ -3,18 +3,34 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import AddTransformerModal from '../components/AddTransformerModal';
 import EditTransformerModal from '../components/EditTransformerModal';
 import NotificationManager from '../components/NotificationManager';
-import { useTransformers } from '../hooks/useTransformers';
+import { usePaginatedTransformers } from '../hooks/useTransformers';
 import { useFavorites } from '../hooks/useFavorites';
 import { useTransformerFilters } from '../hooks/useTransformerFilters';
 import { useNotifications } from '../hooks/useNotifications';
 import { PlusIcon } from '../components/ui/icons';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from '../api/axiosConfig';
+import {
+  createTransformer,
+  updateTransformer,
+  deleteTransformer,
+} from '../api/transformerApi';
+import Pagination from '../components/Pagination';
 
 function TransformersPage() {
   const navigate = useNavigate();
-  const { transformers, loading, error } = useTransformers();
+
+  // Use paginated transformers with 10 items per page
+  const {
+    transformers,
+    loading,
+    error,
+    pagination,
+    goToPage,
+    changePageSize,
+    refetch,
+  } = usePaginatedTransformers(0, 10);
+
   const { favorites, toggleFavorite } = useFavorites();
   const { notifications, removeNotification, showSuccess, showError } =
     useNotifications();
@@ -35,6 +51,15 @@ function TransformersPage() {
     resetFilters,
   } = useTransformerFilters(transformers, favorites);
 
+  // Handle pagination
+  const handlePageChange = newPage => {
+    goToPage(newPage);
+  };
+
+  const handlePageSizeChange = newSize => {
+    changePageSize(newSize);
+  };
+
   // Handle opening the modal
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -49,21 +74,17 @@ function TransformersPage() {
   const handleSaveTransformer = async transformerData => {
     try {
       // Make POST request to save transformer
-      const response = await axios.post('/transformers', transformerData);
+      await createTransformer(transformerData);
 
-      if (response.status === 200 || response.status === 201) {
-        // Success - show success notification
-        showSuccess(
-          'Success!',
-          `Transformer ${transformerData.transformerId} has been saved successfully.`,
-        );
+      // Success - show success notification
+      showSuccess(
+        'Success!',
+        `Transformer ${transformerData.transformerId} has been saved successfully.`,
+      );
 
-        // Optional: Refresh the transformers list
-        // You might want to call a refresh function here or update the state
-        setTimeout(() => {
-          window.location.reload(); // Simple refresh - can be improved with state management
-        }, 1500); // Give time for user to see the notification
-      }
+      // Close modal and refresh data
+      handleCloseModal();
+      refetch();
     } catch (error) {
       console.error('Error saving transformer:', error);
 
@@ -104,20 +125,16 @@ function TransformersPage() {
     setIsDeleting(transformerId);
     try {
       // Make DELETE request to remove transformer
-      const response = await axios.delete(`/transformers/${transformerId}`);
+      await deleteTransformer(transformerId);
 
-      if (response.status === 200 || response.status === 204) {
-        // Success - show success notification
-        showSuccess(
-          'Deleted!',
-          `Transformer ${transformerId} has been deleted successfully.`,
-        );
+      // Success - show success notification
+      showSuccess(
+        'Deleted!',
+        `Transformer ${transformerId} has been deleted successfully.`,
+      );
 
-        // Refresh the transformers list
-        setTimeout(() => {
-          window.location.reload(); // Simple refresh - can be improved with state management
-        }, 1500); // Give time for user to see the notification
-      }
+      // Refresh the transformers list
+      refetch();
     } catch (error) {
       console.error('Error deleting transformer:', error);
 
@@ -175,26 +192,17 @@ function TransformersPage() {
     setIsEditing(true);
     try {
       // Make PUT request to update transformer
-      const response = await axios.put(
-        `/transformers/${selectedTransformer.id}`,
-        updatedData,
+      await updateTransformer(selectedTransformer.id, updatedData);
+
+      // Success - show success notification
+      showSuccess(
+        'Updated!',
+        `Transformer ${updatedData.transformerId} has been updated successfully.`,
       );
 
-      if (response.status === 200 || response.status === 204) {
-        // Success - show success notification
-        showSuccess(
-          'Updated!',
-          `Transformer ${updatedData.transformerId} has been updated successfully.`,
-        );
-
-        // Close modal
-        handleCloseEditModal();
-
-        // Refresh the transformers list
-        setTimeout(() => {
-          window.location.reload(); // Simple refresh - can be improved with state management
-        }, 1500); // Give time for user to see the notification
-      }
+      // Close modal and refresh data
+      handleCloseEditModal();
+      refetch();
     } catch (error) {
       console.error('Error updating transformer:', error);
 
@@ -307,27 +315,36 @@ function TransformersPage() {
       </div>
 
       {/* Transformer View Component */}
-      <TransformerView
-        transformers={filteredTransformers}
-        filterOptions={filterOptions}
-        favorites={favorites}
-        toggleFavorite={toggleFavorite}
-        searchTerm={filters.searchTerm}
-        setSearchTerm={setters.setSearchTerm}
-        searchField={filters.searchField}
-        setSearchField={setters.setSearchField}
-        showFavoritesOnly={filters.showFavoritesOnly}
-        setShowFavoritesOnly={setters.setShowFavoritesOnly}
-        locationFilter={filters.locationFilter}
-        setLocationFilter={setters.setLocationFilter}
-        typeFilter={filters.typeFilter}
-        setTypeFilter={setters.setTypeFilter}
-        resetFilters={resetFilters}
-        onDeleteTransformer={handleDeleteTransformer}
-        onEditTransformer={handleEditTransformer}
-        onViewTransformer={handleViewTransformer}
-        isDeleting={isDeleting}
-      />
+      <div className='rounded-lg bg-white shadow-sm'>
+        <TransformerView
+          transformers={filteredTransformers}
+          filterOptions={filterOptions}
+          favorites={favorites}
+          toggleFavorite={toggleFavorite}
+          searchTerm={filters.searchTerm}
+          setSearchTerm={setters.setSearchTerm}
+          searchField={filters.searchField}
+          setSearchField={setters.setSearchField}
+          showFavoritesOnly={filters.showFavoritesOnly}
+          setShowFavoritesOnly={setters.setShowFavoritesOnly}
+          locationFilter={filters.locationFilter}
+          setLocationFilter={setters.setLocationFilter}
+          typeFilter={filters.typeFilter}
+          setTypeFilter={setters.setTypeFilter}
+          resetFilters={resetFilters}
+          onDeleteTransformer={handleDeleteTransformer}
+          onEditTransformer={handleEditTransformer}
+          onViewTransformer={handleViewTransformer}
+          isDeleting={isDeleting}
+        />
+
+        {/* Pagination Component */}
+        <Pagination
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      </div>
 
       {/* Add Transformer Modal */}
       <AddTransformerModal

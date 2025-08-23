@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import LoadingSpinner from '../components/LoadingSpinner';
+// import { ArrowLeftIcon } from "@heroicons/react/24/solid";
+import BackIcon from "../components/ui/icons/BackIcon";
+import { Image as ImageIcon, Eye as EyeIcon, Trash2 as TrashIcon } from "lucide-react";
 
 
 function TransformerDetailsPage() {
@@ -48,38 +51,59 @@ function TransformerDetailsPage() {
     <div className='p-8'>
       {/* Transformer Summary Card */}
       {transformer && (
-        <div className='mb-8 rounded-lg bg-white p-6 shadow-md'>
+        <div className='mb-8 rounded-lg bg-white p-7 shadow-md'>
           <div className='flex justify-between'>
             <div className='flex items-center'>
               <button
                 onClick={() => navigate(-1)}
-                className='mr-4 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700'
-              >
-                <span className='mr-2'>◀</span>
+                className="mr-4 rounded bg-blue-600 px-3 py-3 hover:bg-blue-700">
+                <BackIcon className="h-10 w-10" />
               </button>
               <div>
-                <h1 className='text-3xl font-bold'>{transformer.transformerId}</h1>
+                <h1 className='text-2xl font-bold'>{transformer.transformerId}</h1>
                 <p className='text-gray-600'>{transformer.location}</p>
               </div>
             </div>
-            <p className='text-sm text-gray-500'>Last Inspected: {transformer.lastInspectedDate || 'N/A'}</p>
+            <div className="flex flex-col items-end space-y-2">
+              <p className='text-sm text-gray-500'>
+                Last Inspected: {transformer.lastInspectedDate || 'N/A'}
+              </p>
+
+              {/* Baseline Image availability */}
+
+            </div>
           </div>
-          <div className='mt-4 grid grid-cols-4 gap-4'>
-            <div className='rounded-lg bg-gray-100 p-4 text-center'>
-              <p className='text-sm text-gray-500'>Pole No</p>
-              <p className='text-lg font-bold'>{transformer.poleNo || 'N/A'}</p>
+          <div className='mt-4 flex justify-between gap-3'>
+            <div className="flex gap-3">  
+              <div className="rounded-lg bg-gray-100 p-2 text-center w-auto max-w-[10rem] h-14 whitespace-normal break-words">
+                <p className="text-sm text-gray-500">Pole No</p>
+                <p className="text-base font-bold">{transformer.poleNo || 'N/A'}</p>
+              </div>
+              <div className='rounded-lg bg-gray-100 p-2 text-center w-auto max-w-[10rem] h-14 whitespace-normal break-words'>
+                <p className='text-sm text-gray-500'>Capacity</p>
+                <p className='text-base font-bold'>{transformer.capacity || 'N/A'}</p>
+              </div>
+              <div className='rounded-lg bg-gray-100 p-2 text-center w-auto max-w-[10rem] h-14 whitespace-normal break-words'>
+                <p className='text-sm text-gray-500'>Type</p>
+                <p className='text-base font-bold'>{transformer.type || 'N/A'}</p>
+              </div>
+              <div className='rounded-lg bg-gray-100 p-2 text-center w-auto max-w-[10rem] h-14 whitespace-normal break-words'>
+                <p className='text-sm text-gray-500'>No. of Feeders</p>
+                <p className='text-base font-bold'>{transformer.feeders || 'N/A'}</p>
+              </div>
             </div>
-            <div className='rounded-lg bg-gray-100 p-4 text-center'>
-              <p className='text-sm text-gray-500'>Capacity</p>
-              <p className='text-lg font-bold'>{transformer.capacity || 'N/A'}</p>
-            </div>
-            <div className='rounded-lg bg-gray-100 p-4 text-center'>
-              <p className='text-sm text-gray-500'>Type</p>
-              <p className='text-lg font-bold'>{transformer.type || 'N/A'}</p>
-            </div>
-            <div className='rounded-lg bg-gray-100 p-4 text-center'>
-              <p className='text-sm text-gray-500'>No. of Feeders</p>
-              <p className='text-lg font-bold'>{transformer.feeders || 'N/A'}</p>
+
+            <div className="flex items-center space-x-3 rounded-lg bg-gray-100 px-3 py-1">
+              <button className="text-indigo-600 hover:text-indigo-800">
+                <ImageIcon className="h-5 w-5" />
+              </button>
+              <span className="text-sm font-medium text-gray-400">Baseline Image</span>
+              <button className="text-gray-600 hover:text-gray-800">
+                <EyeIcon className="h-5 w-5" />
+              </button>
+              <button className="text-red-600 hover:text-red-800">
+                <TrashIcon className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </div>

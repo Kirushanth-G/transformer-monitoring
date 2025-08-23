@@ -155,7 +155,7 @@ function InspectionDetailPage() {
                 </span>
                 <button
                   onClick={() => navigate('/inspections')}
-                  className='rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50'
+                  className='rounded-md bg-blue-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-blue-300'
                 >
                   Back to List
                 </button>

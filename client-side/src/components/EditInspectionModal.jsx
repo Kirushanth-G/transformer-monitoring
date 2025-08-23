@@ -7,6 +7,7 @@ function EditInspectionModal({
   onSave,
   inspection,
   isLoading,
+  existingInspectionNumbers, // Pass a list of existing inspection numbers
 }) {
   const [formData, setFormData] = useState({
     inspectionNo: '',
@@ -104,6 +105,11 @@ function EditInspectionModal({
 
     if (!formData.inspectionNo.trim()) {
       newErrors.inspectionNo = 'Inspection number is required';
+    } else if (
+      existingInspectionNumbers.includes(formData.inspectionNo.trim()) &&
+      formData.inspectionNo.trim() !== inspection?.inspectionNo
+    ) {
+      newErrors.inspectionNo = 'This inspection number already exists';
     }
 
     if (!formData.transformerId.trim()) {

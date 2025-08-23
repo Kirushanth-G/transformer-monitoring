@@ -481,6 +481,7 @@ function TransformerDetailPage() {
         onSave={handleUpdateInspection}
         inspection={selectedInspection}
         isLoading={isSubmittingInspection}
+        existingInspectionNumbers={inspections.map((inspection) => inspection.inspectionNo)} // Pass the list of existing inspection numbers
       />
 
       {/* Notification Manager */}

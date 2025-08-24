@@ -95,11 +95,12 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
 
   return (
     <div
-      className='bg-opacity-60 fixed inset-0 z-50 flex items-center justify-center bg-black p-4 backdrop-blur-[2px]'
+      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center p-4'
       onClick={handleBackdropClick}
     >
+      <div className='absolute inset-0 bg-black/60 backdrop-blur-[2px]'></div>
       <div
-        className='animate-fade-in relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl sm:max-w-lg'
+        className='animate-fade-in relative z-60 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl sm:max-w-lg'
         onClick={e => e.stopPropagation()}
       >
         {/* Modal Header */}

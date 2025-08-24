@@ -95,30 +95,28 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
 
   return (
     <div
-      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center'
+      className='bg-opacity-60 fixed inset-0 z-50 flex items-center justify-center bg-black p-4 backdrop-blur-[2px]'
       onClick={handleBackdropClick}
     >
-    <div 
-      className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
       <div
-        className='relative animate-fade-in z-60 mx-4 w-full max-w-md rounded-lg bg-white shadow-xl'
+        className='animate-fade-in relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl sm:max-w-lg'
         onClick={e => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className='flex items-center justify-between border-b border-gray-200 p-6'>
-          <h2 className='text-xl font-semibold text-gray-800'>
+        <div className='sticky top-0 flex items-center justify-between rounded-t-lg border-b border-gray-200 bg-white p-4 sm:p-6'>
+          <h2 className='text-lg font-semibold text-gray-800 sm:text-xl'>
             Add New Transformer
           </h2>
           <button
             onClick={handleClose}
-            className='text-gray-400 transition-colors hover:text-gray-600'
+            className='p-1 text-gray-400 transition-colors hover:text-gray-600'
           >
-            <XIcon className='h-6 w-6' />
+            <XIcon className='h-5 w-5 sm:h-6 sm:w-6' />
           </button>
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className='p-6'>
+        <form onSubmit={handleSubmit} className='p-4 sm:p-6'>
           <div className='space-y-4'>
             {/* Transformer ID */}
             <div>
@@ -135,7 +133,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
                 value={formData.transformerId}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                className={`w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base ${
                   errors.transformerId ? 'border-red-500' : 'border-gray-300'
                 } ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
                 placeholder='Enter Transformer Number'
@@ -161,7 +159,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
                 name='location'
                 value={formData.location}
                 onChange={handleInputChange}
-                className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                className={`w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base ${
                   errors.location ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder='Enter Location'
@@ -184,7 +182,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
                 name='type'
                 value={formData.type}
                 onChange={handleInputChange}
-                className={`w-full rounded-md border px-3 py-2 focus:ring-2 bg-white text-gray-900 focus:ring-blue-500 focus:outline-none ${
+                className={`w-full rounded-md border bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base ${
                   errors.type ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
@@ -211,7 +209,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
                 name='poleNo'
                 value={formData.poleNo}
                 onChange={handleInputChange}
-                className={`w-full rounded-md border px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                className={`w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none sm:text-base ${
                   errors.poleNo ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder='Enter Pole Number'
@@ -223,12 +221,12 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
           </div>
 
           {/* Modal Footer */}
-          <div className='mt-6 flex items-center justify-end space-x-3 pt-4'>
+          <div className='mt-6 flex flex-col items-center justify-end space-y-2 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3'>
             <button
               type='button'
               onClick={handleClose}
               disabled={isLoading}
-              className={`rounded-md border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:outline-none ${
+              className={`w-full rounded-md border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:outline-none sm:w-auto ${
                 isLoading ? 'cursor-not-allowed opacity-50' : ''
               }`}
             >
@@ -237,7 +235,7 @@ function AddTransformerModal({ isOpen, onClose, onSave }) {
             <button
               type='submit'
               disabled={isLoading}
-              className={`rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+              className={`w-full rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none sm:w-auto ${
                 isLoading ? 'cursor-not-allowed opacity-50' : ''
               }`}
             >

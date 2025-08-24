@@ -4,59 +4,65 @@ function Settings() {
   const [activeTab, setActiveTab] = useState('general');
 
   return (
-    <div className='min-h-screen bg-[#E5E4E2] p-8'>
+    <div className='min-h-screen bg-[#E5E4E2] p-3 sm:p-6 lg:p-8'>
       {/* Header */}
-      <div className='mb-6'>
-        <h1 className='text-2xl font-bold text-gray-800'>Settings</h1>
-        <p className='text-gray-600'>Manage your application preferences</p>
+      <div className='mb-4 sm:mb-6'>
+        <h1 className='text-xl font-bold text-gray-800 sm:text-2xl'>
+          Settings
+        </h1>
+        <p className='text-sm text-gray-600 sm:text-base'>
+          Manage your application preferences
+        </p>
       </div>
 
       {/* Settings Tabs */}
-      <div className='mb-6 flex border-b border-gray-200'>
-        <button
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'general'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-blue-500'
-          }`}
-          onClick={() => setActiveTab('general')}
-        >
-          General
-        </button>
-        <button
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'notifications'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-blue-500'
-          }`}
-          onClick={() => setActiveTab('notifications')}
-        >
-          Notifications
-        </button>
-        <button
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'account'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-blue-500'
-          }`}
-          onClick={() => setActiveTab('account')}
-        >
-          Account
-        </button>
-        <button
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'system'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-blue-500'
-          }`}
-          onClick={() => setActiveTab('system')}
-        >
-          System
-        </button>
+      <div className='mb-4 overflow-x-auto sm:mb-6'>
+        <div className='flex min-w-full border-b border-gray-200'>
+          <button
+            className={`px-3 py-2 text-sm font-medium whitespace-nowrap sm:px-4 sm:text-base ${
+              activeTab === 'general'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-blue-500'
+            }`}
+            onClick={() => setActiveTab('general')}
+          >
+            General
+          </button>
+          <button
+            className={`px-3 py-2 text-sm font-medium whitespace-nowrap sm:px-4 sm:text-base ${
+              activeTab === 'notifications'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-blue-500'
+            }`}
+            onClick={() => setActiveTab('notifications')}
+          >
+            Notifications
+          </button>
+          <button
+            className={`px-3 py-2 text-sm font-medium whitespace-nowrap sm:px-4 sm:text-base ${
+              activeTab === 'account'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-blue-500'
+            }`}
+            onClick={() => setActiveTab('account')}
+          >
+            Account
+          </button>
+          <button
+            className={`px-3 py-2 text-sm font-medium whitespace-nowrap sm:px-4 sm:text-base ${
+              activeTab === 'system'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-blue-500'
+            }`}
+            onClick={() => setActiveTab('system')}
+          >
+            System
+          </button>
+        </div>
       </div>
 
       {/* Settings Content based on active tab */}
-      <div className='rounded-lg bg-white p-6 shadow-md'>
+      <div className='rounded-lg bg-white p-4 shadow-md sm:p-6'>
         {activeTab === 'general' && (
           <div>
             <h3 className='mb-4 text-lg font-medium'>General Settings</h3>

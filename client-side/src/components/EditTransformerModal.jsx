@@ -85,15 +85,13 @@ function EditTransformerModal({
   return (
     <div
       ref={modalRef}
-      className='bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center'
+      className='bg-opacity-60 fixed inset-0 z-50 flex items-center justify-center bg-black p-4 backdrop-blur-[2px]'
       onClick={handleModalClick}
     >
-    <div 
-      className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
-      <div className='relative animate-fade-in mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl'>
+      <div className='animate-fade-in relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl sm:max-w-lg'>
         {/* Header */}
-        <div className='mb-4 flex items-center justify-between'>
-          <h2 className='text-xl font-semibold text-gray-800'>
+        <div className='sticky top-0 mb-4 flex items-center justify-between rounded-t-lg border-b border-gray-200 bg-white p-4 sm:p-6'>
+          <h2 className='text-lg font-semibold text-gray-800 sm:text-xl'>
             Edit Transformer
           </h2>
           <button
@@ -101,12 +99,12 @@ function EditTransformerModal({
             disabled={isLoading}
             className='rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none'
           >
-            <XIcon className='h-5 w-5' />
+            <XIcon className='h-4 w-4 sm:h-5 sm:w-5' />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className='space-y-4'>
+        <form onSubmit={handleSubmit} className='space-y-4 p-4 pt-0 sm:p-6'>
           {/* Transformer ID */}
           <div>
             <label
@@ -192,19 +190,19 @@ function EditTransformerModal({
           </div>
 
           {/* Actions */}
-          <div className='flex justify-end space-x-3 pt-4'>
+          <div className='flex flex-col justify-end space-y-2 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3'>
             <button
               type='button'
               onClick={onClose}
               disabled={isLoading}
-              className='rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+              className='w-full rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto'
             >
               Cancel
             </button>
             <button
               type='submit'
               disabled={isLoading}
-              className='rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+              className='w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto'
             >
               {isLoading ? 'Saving...' : 'Save Changes'}
             </button>

@@ -14,6 +14,30 @@
   /* ... */
 }
 
+/* Custom responsive utilities */
+@media (max-width: 640px) {
+  .mobile-hide {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .tablet-hide {
+    display: none !important;
+  }
+}
+
+/* Mobile-first responsive text utilities */
+.responsive-text {
+  font-size: 0.875rem; /* text-sm on mobile */
+}
+
+@media (min-width: 640px) {
+  .responsive-text {
+    font-size: 1rem; /* text-base on sm and up */
+  }
+}
+
 /* Custom notification animations */
 @keyframes slide-in-right {
   from {

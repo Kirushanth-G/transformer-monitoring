@@ -305,10 +305,8 @@ function TransformerImageDisplay({
 
   return (
     <div className='rounded-lg bg-gray-200'>
-      <h3 className='text-sm font-medium text-gray-500 text-center'>Baseline Image</h3>
-
       {hasImage && imageUrl ? (
-        <div className='flex items-center justify-center space-x-4 mt-1'>
+        <div className='mt-1 flex items-center justify-center space-x-4'>
           <button
             onClick={e => {
               e.preventDefault();
@@ -328,7 +326,7 @@ function TransformerImageDisplay({
           </button>
         </div>
       ) : (
-        <div className='flex items-center justify-center space-x-4 mt-1'>
+        <div className='mt-1 flex items-center justify-center space-x-4'>
           <label className='flex w-full cursor-pointer items-center justify-center rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100'>
             <PlusIcon className='mr-2 h-4 w-4' />
             {uploading ? 'Uploading...' : 'Add Image'}

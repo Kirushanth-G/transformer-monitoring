@@ -229,14 +229,14 @@ function InspectionsPage() {
   }
 
   return (
-    <div className='min-h-screen bg-[#E5E4E2] p-8'>
+    <div className='min-h-screen bg-[#E5E4E2] p-3 sm:p-6 lg:p-8'>
       {/* Mock Data Warning */}
       {isUsingMockData && (
-        <div className='mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4'>
+        <div className='mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 sm:p-4'>
           <div className='flex'>
             <div className='flex-shrink-0'>
               <svg
-                className='h-5 w-5 text-yellow-400'
+                className='h-4 w-4 text-yellow-400 sm:h-5 sm:w-5'
                 viewBox='0 0 20 20'
                 fill='currentColor'
               >
@@ -251,7 +251,7 @@ function InspectionsPage() {
               <h3 className='text-sm font-medium text-yellow-800'>
                 Using Mock Data
               </h3>
-              <div className='mt-2 text-sm text-yellow-700'>
+              <div className='mt-2 text-xs text-yellow-700 sm:text-sm'>
                 <p>
                   The API server is not available. Showing sample data. Edit and
                   delete operations are disabled.
@@ -263,19 +263,21 @@ function InspectionsPage() {
       )}
 
       {/* Header */}
-      <div className='mb-6 flex items-center justify-between'>
+      <div className='mb-4 flex flex-col justify-between gap-4 sm:mb-6 sm:flex-row sm:items-center'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-800'>Inspections</h1>
-          <p className='text-gray-600'>
+          <h1 className='text-xl font-bold text-gray-800 sm:text-2xl'>
+            Inspections
+          </h1>
+          <p className='text-sm text-gray-600 sm:text-base'>
             Monitor transformer inspection records
           </p>
         </div>
         <div className='flex gap-2'>
           <button
             onClick={handleOpenAddModal}
-            className='flex items-center rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700'
+            className='flex w-full items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 sm:w-auto sm:px-4 sm:text-base'
           >
-            <PlusIcon className='mr-2 h-5 w-5' />
+            <PlusIcon className='mr-2 h-4 w-4 sm:h-5 sm:w-5' />
             Add Inspection
           </button>
         </div>

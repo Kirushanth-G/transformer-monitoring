@@ -300,17 +300,21 @@ function TransformersPage() {
   }
 
   return (
-    <div className='min-h-screen bg-[#E5E4E2] p-8'>
-      <div className='mb-6 flex items-center justify-between'>
+    <div className='min-h-screen bg-[#E5E4E2] p-3 sm:p-6 lg:p-8'>
+      <div className='mb-4 flex flex-col justify-between gap-4 sm:mb-6 sm:flex-row sm:items-center'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-800'>Transformers</h1>
-          <p className='text-gray-600'>Manage and monitor power transformers</p>
+          <h1 className='text-xl font-bold text-gray-800 sm:text-2xl'>
+            Transformers
+          </h1>
+          <p className='text-sm text-gray-600 sm:text-base'>
+            Manage and monitor power transformers
+          </p>
         </div>
         <button
           onClick={handleOpenModal}
-          className='flex items-center rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700'
+          className='flex w-full items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 sm:w-auto sm:px-4 sm:text-base'
         >
-          <PlusIcon className='mr-2 h-5 w-5' />
+          <PlusIcon className='mr-2 h-4 w-4 sm:h-5 sm:w-5' />
           Add Transformer
         </button>
       </div>

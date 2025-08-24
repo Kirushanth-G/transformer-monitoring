@@ -42,10 +42,10 @@ const Pagination = ({
   }
 
   return (
-    <div className='flex flex-col items-center justify-between gap-4 border-t border-gray-200 bg-white px-4 py-3 sm:flex-row sm:px-6'>
+    <div className='flex flex-col items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-2 sm:flex-row sm:gap-4 sm:px-6 sm:py-3'>
       {/* Results info */}
-      <div className='flex flex-1 justify-between sm:hidden'>
-        <span className='text-sm text-gray-700'>
+      <div className='flex flex-1 justify-center text-center sm:hidden'>
+        <span className='text-xs text-gray-700 sm:text-sm'>
           Showing {pageNumber * pageSize + 1} to{' '}
           {Math.min((pageNumber + 1) * pageSize, totalElements)} of{' '}
           {totalElements} results
@@ -127,21 +127,21 @@ const Pagination = ({
       </div>
 
       {/* Mobile navigation */}
-      <div className='flex w-full justify-between sm:hidden'>
+      <div className='flex w-full items-center justify-between sm:hidden'>
         <button
           onClick={() => onPageChange(pageNumber - 1)}
           disabled={first}
-          className='relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50'
+          className='relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50'
         >
           Previous
         </button>
-        <span className='flex items-center text-sm text-gray-700'>
+        <span className='flex items-center text-xs font-medium text-gray-700'>
           Page {pageNumber + 1} of {totalPages}
         </span>
         <button
           onClick={() => onPageChange(pageNumber + 1)}
           disabled={last}
-          className='relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50'
+          className='relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50'
         >
           Next
         </button>

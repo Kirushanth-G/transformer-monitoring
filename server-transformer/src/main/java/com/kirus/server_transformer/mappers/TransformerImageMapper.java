@@ -1,6 +1,6 @@
 package com.kirus.server_transformer.mappers;
 
-import com.kirus.server_transformer.dto.TransformerImageDTO;
+import com.kirus.server_transformer.dtos.TransformerImageDTO;
 import com.kirus.server_transformer.entities.TransformImage;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

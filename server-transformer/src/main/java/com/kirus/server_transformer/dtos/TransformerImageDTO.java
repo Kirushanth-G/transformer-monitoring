@@ -1,4 +1,4 @@
-package com.kirus.server_transformer.dto;
+package com.kirus.server_transformer.dtos;
 
 import java.time.LocalDateTime;
 

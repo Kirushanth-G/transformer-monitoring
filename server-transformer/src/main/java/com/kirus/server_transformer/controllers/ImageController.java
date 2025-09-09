@@ -1,7 +1,7 @@
 package com.kirus.server_transformer.controllers;
 
-import com.kirus.server_transformer.dto.InspectionImageDTO;
-import com.kirus.server_transformer.dto.TransformerImageDTO;
+import com.kirus.server_transformer.dtos.InspectionImageDTO;
+import com.kirus.server_transformer.dtos.TransformerImageDTO;
 import com.kirus.server_transformer.entities.Inspection;
 import com.kirus.server_transformer.entities.InspectionImage;
 import com.kirus.server_transformer.entities.TransformImage;

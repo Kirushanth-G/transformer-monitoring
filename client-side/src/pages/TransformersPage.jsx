@@ -26,8 +26,10 @@ function TransformersPage() {
     loading,
     error,
     pagination,
+    sortConfig,
     goToPage,
     changePageSize,
+    changeSorting,
     refetch,
   } = usePaginatedTransformers(0, 10);
 
@@ -341,6 +343,8 @@ function TransformersPage() {
           onEditTransformer={handleEditTransformer}
           onViewTransformer={handleViewTransformer}
           isDeleting={isDeleting}
+          sortConfig={sortConfig}
+          onSortChange={changeSorting}
         />
 
         {/* Pagination Component */}

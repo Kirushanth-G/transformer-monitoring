@@ -46,11 +46,12 @@ export const useTransformers = () => {
   };
 };
 
-// New hook for paginated transformers
-export const usePaginatedTransformers = (initialPage = 0, initialSize = 10) => {
+// New hook for paginated transformers with sorting
+export const usePaginatedTransformers = (initialPage = 0, initialSize = 10, initialSort = 'transformerId,asc') => {
   const [transformers, setTransformers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortConfig, setSortConfig] = useState(initialSort);
   const [pagination, setPagination] = useState({
     pageNumber: initialPage,
     pageSize: initialSize,
@@ -62,12 +63,12 @@ export const usePaginatedTransformers = (initialPage = 0, initialSize = 10) => {
   });
 
   const fetchTransformers = useCallback(
-    async (page = pagination.pageNumber, size = pagination.pageSize) => {
+    async (page = pagination.pageNumber, size = pagination.pageSize, sort = sortConfig) => {
       try {
         setLoading(true);
         setError(null);
 
-        const pagedResponse = await getTransformers(page, size);
+        const pagedResponse = await getTransformers(page, size, sort);
 
         // Check if we got valid paginated response
         if (
@@ -119,23 +120,32 @@ export const usePaginatedTransformers = (initialPage = 0, initialSize = 10) => {
         setLoading(false);
       }
     },
-    [pagination.pageNumber, pagination.pageSize],
+    [pagination.pageNumber, pagination.pageSize, sortConfig],
   );
 
   const goToPage = useCallback(
     page => {
       if (page >= 0 && page < pagination.totalPages) {
-        fetchTransformers(page, pagination.pageSize);
+        fetchTransformers(page, pagination.pageSize, sortConfig);
       }
     },
-    [fetchTransformers, pagination.totalPages, pagination.pageSize],
+    [fetchTransformers, pagination.totalPages, pagination.pageSize, sortConfig],
   );
 
   const changePageSize = useCallback(
     size => {
-      fetchTransformers(0, size); // Reset to first page when changing size
+      fetchTransformers(0, size, sortConfig); // Reset to first page when changing size
     },
-    [fetchTransformers],
+    [fetchTransformers, sortConfig],
+  );
+
+  const changeSorting = useCallback(
+    (field = 'transformerId', direction = 'asc') => {
+      const newSort = `${field},${direction}`;
+      setSortConfig(newSort);
+      fetchTransformers(0, pagination.pageSize, newSort); // Reset to first page when changing sort
+    },
+    [fetchTransformers, pagination.pageSize, sortConfig],
   );
 
   const nextPage = useCallback(() => {
@@ -159,9 +169,11 @@ export const usePaginatedTransformers = (initialPage = 0, initialSize = 10) => {
     loading,
     error,
     pagination,
+    sortConfig,
     refetch: fetchTransformers,
     goToPage,
     changePageSize,
+    changeSorting,
     nextPage,
     previousPage,
   };

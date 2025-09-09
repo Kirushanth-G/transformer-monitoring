@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { SearchIcon, StarIcon } from './ui/icons';
 import { displayValue, isNullValue } from '../utils/displayHelpers';
 import TransformerActionDropdown from './TransformerActionDropdown';
@@ -23,6 +23,8 @@ function TransformerView({
   onEditTransformer,
   onViewTransformer,
   isDeleting,
+  sortConfig,
+  onSortChange,
 }) {
   // Use pre-filtered transformers from the filter hook
   const filteredTransformers = transformers;
@@ -30,19 +32,20 @@ function TransformerView({
   // Use filter options from the filter hook
   const { locations, types } = filterOptions;
 
-  const [sortOrder, setSortOrder] = useState('asc');
-
-  const handleSort = () => {
-    setSortOrder(prevOrder => (prevOrder === 'asc' ? 'desc' : 'asc'));
+  // Parse current sort configuration
+  const getCurrentSortConfig = () => {
+    if (!sortConfig) return { field: 'transformerId', direction: 'asc' };
+    
+    const [field, direction] = sortConfig.split(',');
+    return { field: field || 'transformerId', direction: direction || 'asc' };
   };
 
-  const sortedTransformers = [...transformers].sort((a, b) => {
-    if (sortOrder === 'asc') {
-      return a.transformerId.localeCompare(b.transformerId);
-    } else {
-      return b.transformerId.localeCompare(a.transformerId);
-    }
-  });
+  const { field: currentSortField, direction: currentSortDirection } = getCurrentSortConfig();
+
+  const handleSort = () => {
+    const newDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    onSortChange('transformerId', newDirection);
+  };
 
   return (
     <>
@@ -162,7 +165,7 @@ function TransformerView({
               >
                 <span>Transformer No.</span>
                 <span className='ml-1 text-xs sm:ml-2 sm:text-sm'>
-                  {sortOrder === 'asc' ? '▲' : '▼'}
+                  {currentSortDirection === 'asc' ? '▲' : '▼'}
                 </span>
               </th>
               <th className='px-2 py-2 text-left text-xs font-bold sm:px-6 sm:py-3 sm:text-sm'>
@@ -181,9 +184,9 @@ function TransformerView({
             </tr>
           </thead>
           <tbody className='divide-y divide-gray-200'>
-            {sortedTransformers.map((transformer, index) => (
+            {filteredTransformers.map((transformer, index) => (
               <tr
-                key={index}
+                key={transformer.id}
                 className={`${
                   index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                 } transition-colors duration-150 hover:bg-gray-100`}

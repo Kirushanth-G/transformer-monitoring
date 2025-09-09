@@ -20,8 +20,10 @@ function PaginatedTransformersPage() {
     loading,
     error,
     pagination,
+    sortConfig,
     goToPage,
     changePageSize,
+    changeSorting,
     nextPage,
     previousPage,
   } = usePaginatedTransformers(0, pageSize);
@@ -146,6 +148,8 @@ function PaginatedTransformersPage() {
           }
           onViewTransformer={handleViewTransformer}
           isDeleting={null}
+          sortConfig={sortConfig}
+          onSortChange={changeSorting}
         />
 
         {/* Pagination Component */}

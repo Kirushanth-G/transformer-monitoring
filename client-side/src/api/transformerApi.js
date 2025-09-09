@@ -1,14 +1,32 @@
 import axios from './axiosConfig';
 
-// Get paginated transformers
-export const getTransformers = async (page = 0, size = 10) => {
+// Get paginated transformers with sorting
+export const getTransformers = async (page = 0, size = 10, sort = 'transformerId,asc') => {
   const response = await axios.get('/transformers', {
-    params: { page, size },
+    params: { page, size, sort },
   });
 
-  console.log('API Response for getTransformers:', response.data);
+  // Check if response has the new Spring Boot pagination format
+  if (
+    response.data &&
+    response.data.content &&
+    Array.isArray(response.data.content) &&
+    response.data.page
+  ) {
+    // Map Spring Boot pagination format to our expected format
+    return {
+      content: response.data.content,
+      pageNumber: response.data.page.number,
+      pageSize: response.data.page.size,
+      totalElements: response.data.page.totalElements,
+      totalPages: response.data.page.totalPages,
+      first: response.data.page.number === 0,
+      last: response.data.page.number === response.data.page.totalPages - 1,
+      empty: response.data.content.length === 0,
+    };
+  }
 
-  // Check if response is already paginated
+  // Check if response is already paginated (legacy format)
   if (
     response.data &&
     response.data.content &&

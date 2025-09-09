@@ -10,10 +10,10 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @CrossOrigin(origins = {"http://localhost:5173" , "http://react-powergrid.s3-website-ap-southeast-1.amazonaws.com"})
 @AllArgsConstructor
@@ -25,17 +25,16 @@ public class TransformerController {
     private final TransformerMapper transformerMapper;
 
     @GetMapping
-    public ResponseEntity<PagedResponse<TransformerDto>> getAllTransformers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public PagedModel<TransformerDto> getAllTransformers(Pageable pageable) {
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Transformer> transformerPage = transformerRepository.findAll(pageable);
+        Sort.Order order = pageable.getSort().getOrderFor("transformerId");
+        boolean isDesc = order != null && order.getDirection() == Sort.Direction.DESC;
 
-        Page<TransformerDto> transformerDtoPage = transformerPage.map(transformerMapper::toDto);
-        PagedResponse<TransformerDto> response = PagedResponse.of(transformerDtoPage);
-
-        return ResponseEntity.ok(response);
+        Page<Transformer> transformerPage = isDesc ?
+                transformerRepository.findAllOrderByTransformerIdDesc(pageable) :
+                transformerRepository.findAllOrderByTransformerIdAsNumber(pageable);
+        Page<TransformerDto> dtoPage = transformerPage.map(transformerMapper::toDto);
+        return new PagedModel<>(dtoPage);
     }
 
     @GetMapping("/{id}")

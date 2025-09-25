@@ -1,0 +1,41 @@
+name: Upload Website
+
+on:
+  push:
+    paths:
+      - 'client-side/**'
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: client-side/package-lock.json
+
+      - name: Install & Build React App
+        run: |
+          cd client-side
+          npm ci
+          npm run build
+
+      - name: Deploy to S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          bucket: ${{ secrets.AWS_S3_BUCKET }}   
+          region: ap-south-1
+          source: client-side/build
+          delete: true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

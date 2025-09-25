@@ -75,7 +75,7 @@ jobs:
           source: "*.jar"
           target: "/home/ec2-user/deployment/"
 
-      - name: Deploy and Update Systemd Service
+      - name: Deploy and Update Application
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -97,59 +97,48 @@ jobs:
             # Stop existing service
             sudo systemctl stop spring-boot-app || true
             
-            # Find the JAR file and rename it to app.jar
-            JAR_FILE=$(find . -name "*.jar" -not -name "*sources.jar" -not -name "*javadoc.jar" | head -1)
-            if [ -z "$JAR_FILE" ]; then
-              echo "Error: No JAR file found!"
+            # List current files for debugging
+            echo "Files in deployment directory:"
+            ls -la
+            
+            # Create target directory if it doesn't exist
+            mkdir -p target
+            
+            # Find the new JAR file and move it to the target directory
+            NEW_JAR=$(find . -maxdepth 1 -name "*.jar" -not -name "*backup*" | head -1)
+            if [ -z "$NEW_JAR" ]; then
+              echo "Error: No new JAR file found!"
               ls -la
               exit 1
             fi
             
-            echo "Found JAR file: $JAR_FILE"
+            echo "Found new JAR file: $NEW_JAR"
             
-            # Backup current JAR if exists
-            if [ -f app.jar ]; then
-              mv app.jar app-backup-$(date +%Y%m%d-%H%M%S).jar
+            # Backup existing JAR in target directory if it exists
+            if [ -f target/server-transformer-3.5.4.jar ]; then
+              mv target/server-transformer-3.5.4.jar target/server-transformer-backup-$(date +%Y%m%d-%H%M%S).jar
             fi
             
-            # Move new JAR to expected location
-            mv "$JAR_FILE" app.jar
+            # Move the new JAR to the expected location for your systemd service
+            mv "$NEW_JAR" target/server-transformer-3.5.4.jar
             
             # Ensure JAR is executable
-            chmod +x app.jar
+            chmod +x target/server-transformer-3.5.4.jar
             
-            # Verify the JAR file exists
-            if [ ! -f app.jar ]; then
-              echo "Error: app.jar was not created successfully!"
-              ls -la
+            # Verify the JAR file exists at the expected location
+            if [ ! -f target/server-transformer-3.5.4.jar ]; then
+              echo "Error: JAR was not moved to target directory successfully!"
+              ls -la target/
               exit 1
             fi
             
-            echo "JAR file ready: $(ls -la app.jar)"
+            echo "JAR file ready at expected location:"
+            ls -la target/server-transformer-3.5.4.jar
             
-            # Create or update systemd service file
-            sudo tee /etc/systemd/system/spring-boot-app.service > /dev/null << EOF
-            [Unit]
-            Description=Spring Boot Application
-            After=network.target
-            
-            [Service]
-            Type=simple
-            User=ec2-user
-            WorkingDirectory=/home/ec2-user/deployment
-            ExecStart=/usr/bin/java -jar /home/ec2-user/deployment/app.jar
-            EnvironmentFile=/home/ec2-user/deployment/application.env
-            Restart=always
-            RestartSec=10
-            
-            [Install]
-            WantedBy=multi-user.target
-            EOF
-            
-            # Reload systemd and start service
+            # Reload systemd (in case service file changed) and start service
             sudo systemctl daemon-reload
-            sudo systemctl enable spring-boot-app
             sudo systemctl start spring-boot-app
+            sudo systemctl enable spring-boot-app
             
             # Wait and check if service started successfully
             sleep 15

@@ -33,6 +33,9 @@ jobs:
 
       - name: Run Tests
         run: mvn test
+        env:
+          PSQL_USER: ${{ secrets.PSQL_USER }}
+          PSQL_PASSWORD: ${{ secrets.PSQL_PASSWORD }}
 
       - name: Debug Maven Build Output
         run: ls -R target

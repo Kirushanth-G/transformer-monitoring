@@ -27,7 +27,8 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn clean package -DskipTests
+        run: |
+          mvn clean package -DskipTests
           ls -la target/
 
       - name: Run Tests
@@ -36,12 +37,16 @@ jobs:
       - name: Debug Maven Build Output
         run: ls -R target
 
-      - name: Check for Artifacts
+      - name: Check for JAR file
         run: |
-          if [ ! -f target/*.jar ]; then
-            echo "Error: No artifacts found in target directory."
+          JAR_FILE=$(find target -name "*.jar" -not -name "*sources.jar" -not -name "*javadoc.jar" | head -1)
+          if [ -z "$JAR_FILE" ]; then
+            echo "Error: No executable JAR found in target directory."
+            ls -la target/
             exit 1
           fi
+          echo "Found JAR: $JAR_FILE"
+          echo "JAR_FILE=$(basename $JAR_FILE)" >> $GITHUB_ENV
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
@@ -59,23 +64,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: packaged-application
-          path: target/
-
-      - name: Setup key
-        id: setup-key
-        env:
-          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-        run: |
-          echo "$DEPLOY_KEY" >> $HOME/key.pem
-          chmod 400 $HOME/key.pem
+          path: ./
 
       - name: Copy JAR to EC2
-        uses: appleboy/scp-action@master
+        uses: appleboy/scp-action@v1.0.3
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ec2-user
           key: ${{ secrets.DEPLOY_KEY }}
-          source: "target/*.jar"
+          source: "*.jar"
           target: "/home/ec2-user/deployment/"
 
       - name: Deploy with Environment Variables
@@ -124,9 +121,3 @@ jobs:
               sudo journalctl -u spring-boot-app --no-pager -n 30
               exit 1
             fi
-
-      - name: Connect SSH and Restart Services
-        run: |
-          ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ec2-user@${{ secrets.DEPLOY_HOST }} '
-            sudo systemctl restart spring-boot-app
-          '

@@ -29,6 +29,17 @@ jobs:
           cd client-side
           npm ci
           npm run build
+          ls -la build/
+
+      - name: Verify build directory
+        run: |
+          if [ ! -d "client-side/build" ]; then
+            echo "Build directory does not exist!"
+            ls -la client-side/
+            exit 1
+          fi
+          echo "Build directory exists, contents:"
+          ls -la client-side/build/
 
       - name: Deploy to S3
         uses: jakejarvis/s3-sync-action@master
@@ -39,5 +50,5 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-south-1
-          SOURCE_DIR: client-side/build/
+          SOURCE_DIR: client-side/build
 

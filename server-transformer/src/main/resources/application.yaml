@@ -6,8 +6,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://db-powergrid.cj8w82u2a1vs.ap-southeast-1.rds.amazonaws.com/db-transformer
-    username: postgres
-    password: 3103Kiru
+    username: ${PSQL_USER}
+    password: ${PSQL_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
 #  jpa:

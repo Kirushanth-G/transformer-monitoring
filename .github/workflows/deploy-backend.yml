@@ -1,0 +1,132 @@
+name: CI/CD for Spring Boot App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'server-transformer/**'  
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server-transformer
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+          ls -la target/
+
+      - name: Run Tests
+        run: mvn test
+
+      - name: Debug Maven Build Output
+        run: ls -R target
+
+      - name: Check for Artifacts
+        run: |
+          if [ ! -f target/*.jar ]; then
+            echo "Error: No artifacts found in target directory."
+            exit 1
+          fi
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-application
+          path: server-transformer/target/*.jar
+  
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-application
+          path: target/
+
+      - name: Setup key
+        id: setup-key
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          echo "$DEPLOY_KEY" >> $HOME/key.pem
+          chmod 400 $HOME/key.pem
+
+      - name: Copy JAR to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ec2-user
+          key: ${{ secrets.DEPLOY_KEY }}
+          source: "target/*.jar"
+          target: "/home/ec2-user/deployment/"
+
+      - name: Deploy with Environment Variables
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ec2-user
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            cd /home/ec2-user/deployment
+            
+            # Create environment file with your PostgreSQL credentials
+            cat > application.env << EOF
+            PSQL_USER=${{ secrets.PSQL_USER }}
+            PSQL_PASSWORD=${{ secrets.PSQL_PASSWORD }}
+            SPRING_PROFILES_ACTIVE=production
+            EOF
+            
+            # Set proper permissions for env file
+            chmod 600 application.env
+            
+            # Stop existing service
+            sudo systemctl stop spring-boot-app || true
+            
+            # Backup current JAR if exists
+            if [ -f app.jar ]; then
+              mv app.jar app-backup-$(date +%Y%m%d-%H%M%S).jar
+            fi
+            
+            # Move new JAR to expected location
+            mv *.jar app.jar
+            
+            # Start the service
+            sudo systemctl start spring-boot-app
+            sudo systemctl enable spring-boot-app
+            
+            # Wait and check if service started successfully
+            sleep 15
+            if sudo systemctl is-active --quiet spring-boot-app; then
+              echo "✅ Spring Boot application deployed successfully"
+              echo "Application status:"
+              sudo systemctl status spring-boot-app --no-pager -l
+            else
+              echo "❌ Failed to start Spring Boot application"
+              echo "Service logs:"
+              sudo journalctl -u spring-boot-app --no-pager -n 30
+              exit 1
+            fi
+
+      - name: Connect SSH and Restart Services
+        run: |
+          ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ec2-user@${{ secrets.DEPLOY_HOST }} '
+            sudo systemctl restart spring-boot-app
+          '

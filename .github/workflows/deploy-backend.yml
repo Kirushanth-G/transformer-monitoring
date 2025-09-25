@@ -37,9 +37,6 @@ jobs:
           PSQL_USER: ${{ secrets.PSQL_USER }}
           PSQL_PASSWORD: ${{ secrets.PSQL_PASSWORD }}
 
-      - name: Debug Maven Build Output
-        run: ls -R target
-
       - name: Check for JAR file
         run: |
           JAR_FILE=$(find target -name "*.jar" -not -name "*sources.jar" -not -name "*javadoc.jar" | head -1)
@@ -78,7 +75,7 @@ jobs:
           source: "*.jar"
           target: "/home/ec2-user/deployment/"
 
-      - name: Deploy with Environment Variables
+      - name: Deploy and Update Systemd Service
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -100,17 +97,59 @@ jobs:
             # Stop existing service
             sudo systemctl stop spring-boot-app || true
             
+            # Find the JAR file and rename it to app.jar
+            JAR_FILE=$(find . -name "*.jar" -not -name "*sources.jar" -not -name "*javadoc.jar" | head -1)
+            if [ -z "$JAR_FILE" ]; then
+              echo "Error: No JAR file found!"
+              ls -la
+              exit 1
+            fi
+            
+            echo "Found JAR file: $JAR_FILE"
+            
             # Backup current JAR if exists
             if [ -f app.jar ]; then
               mv app.jar app-backup-$(date +%Y%m%d-%H%M%S).jar
             fi
             
             # Move new JAR to expected location
-            mv *.jar app.jar
+            mv "$JAR_FILE" app.jar
             
-            # Start the service
-            sudo systemctl start spring-boot-app
+            # Ensure JAR is executable
+            chmod +x app.jar
+            
+            # Verify the JAR file exists
+            if [ ! -f app.jar ]; then
+              echo "Error: app.jar was not created successfully!"
+              ls -la
+              exit 1
+            fi
+            
+            echo "JAR file ready: $(ls -la app.jar)"
+            
+            # Create or update systemd service file
+            sudo tee /etc/systemd/system/spring-boot-app.service > /dev/null << EOF
+            [Unit]
+            Description=Spring Boot Application
+            After=network.target
+            
+            [Service]
+            Type=simple
+            User=ec2-user
+            WorkingDirectory=/home/ec2-user/deployment
+            ExecStart=/usr/bin/java -jar /home/ec2-user/deployment/app.jar
+            EnvironmentFile=/home/ec2-user/deployment/application.env
+            Restart=always
+            RestartSec=10
+            
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+            
+            # Reload systemd and start service
+            sudo systemctl daemon-reload
             sudo systemctl enable spring-boot-app
+            sudo systemctl start spring-boot-app
             
             # Wait and check if service started successfully
             sleep 15

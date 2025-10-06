@@ -2,22 +2,44 @@ spring:
   application:
     name: server-transformer
   profiles:
-    active: dev
+    active: local
 
   datasource:
     url: jdbc:postgresql://db-powergrid.cj8w82u2a1vs.ap-southeast-1.rds.amazonaws.com/db-transformer
-    username: ${PSQL_USER}
-    password: ${PSQL_PASSWORD}
+    username: postgres
+    password: 3103Kiru
     driver-class-name: org.postgresql.Driver
 
-#  jpa:
-#    hibernate:
-#      ddl-auto: validate
-#    show-sql: true
-#    properties:
-#      hibernate:
-#        format_sql: true
-#        use_sql_comments: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+
+  flyway:
+    url: jdbc:postgresql://db-powergrid.cj8w82u2a1vs.ap-southeast-1.rds.amazonaws.com/db-transformer
+    user: postgres
+    password: 3103Kiru
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# Thermal Analysis Configuration
+thermal:
+  analysis:
+    api:
+      url: http://localhost:8000  # FastAPI service URL
+      timeout: 300000             # 5 minutes timeout
+      retry:
+        max-attempts: 3
+        delay: 1000              # 1 second delay between retries
+    processing:
+      default-sensitivity: 50
+      default-image-size: 640
+      max-concurrent-analyses: 5
+
 
 #cloud:
 #    aws:

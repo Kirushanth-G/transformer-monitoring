@@ -76,4 +76,23 @@ public class S3Service {
                 .key(finalKey)
                 .build());
     }
+
+    public boolean doesObjectExist(String key) {
+        try {
+            // Extract just the filename if a full URL was passed
+            if (key.contains("/")) {
+                key = key.substring(key.lastIndexOf("/") + 1);
+            }
+
+            final String finalKey = key; // Make it final for lambda
+
+            s3Client.headObject(builder -> builder
+                    .bucket(bucketName)
+                    .key(finalKey)
+                    .build());
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

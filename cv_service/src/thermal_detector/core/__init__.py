@@ -1,0 +1,1 @@
+# Core thermal detection modules

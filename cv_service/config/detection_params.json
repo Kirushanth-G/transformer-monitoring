@@ -1,0 +1,26 @@
+{
+  "detection": {
+    "yolo_confidence_threshold": 0.2,
+    "enable_fallback_detection": true,
+    "fallback_probability_threshold": 0.4
+  },
+  "thermal_analysis": {
+    "color_thresholds": {
+      "saturation_min": 0.35,
+      "value_min": 0.5,
+      "delta_value_min": 0.12,
+      "delta_luminance_min": 0.08
+    },
+    "hot_zone_thresholds": {
+      "saturation_min_hot": 0.45,
+      "value_min_hot": 0.65,
+      "delta_value_min_hot": 0.18
+    },
+    "shape_analysis": {
+      "minimum_area_fraction": 0.001,
+      "loose_joint_area_threshold": 0.1,
+      "wire_aspect_ratio_min": 2.2,
+      "wire_area_max": 0.25
+    }
+  }
+}

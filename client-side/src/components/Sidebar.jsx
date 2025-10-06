@@ -66,7 +66,7 @@ function Sidebar({ isOpen, onClose, isMobile }) {
               <span className='truncate'>Transformers</span>
             </NavLink>
           </li>
-          <li>
+                    <li>
             <NavLink
               to='/inspections'
               className={navLinkClass}

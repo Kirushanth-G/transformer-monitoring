@@ -7,6 +7,7 @@ import com.kirus.server_transformer.entities.ThermalAnalysis;
 import com.kirus.server_transformer.repositories.AnomalyDetectionRepository;
 import com.kirus.server_transformer.repositories.InspectionImageRepository;
 import com.kirus.server_transformer.repositories.ThermalAnalysisRepository;
+import com.kirus.server_transformer.repositories.TransformerImageRepository;
 import com.kirus.server_transformer.service.FastApiClientService;
 import com.kirus.server_transformer.service.ThermalAnalysisService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,6 +48,9 @@ public class ThermalAnalysisController {
 
     @Autowired
     private InspectionImageRepository inspectionImageRepository;
+
+    @Autowired
+    private TransformerImageRepository transformerImageRepository;
 
     @Autowired
     private AnomalyDetectionRepository anomalyDetectionRepository;
@@ -316,4 +320,6 @@ public class ThermalAnalysisController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+
 }

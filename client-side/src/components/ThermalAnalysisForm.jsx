@@ -4,15 +4,17 @@ import { thermalApi } from '../services/thermalApi';
 const ThermalAnalysisForm = ({ 
   onAnalysisComplete, 
   selectedImageId, 
+  baselineImageId,
   equipmentId, 
   inspectionId,
   showSuccess, 
   showError,
-  imageInfo
+  imageInfo,
+  baselineImageInfo
 }) => {
   const [formData, setFormData] = useState({
     maintenanceImagePath: selectedImageId || '',
-    baselineImagePath: '',
+    baselineImagePath: baselineImageId || '',
     processingDevice: -1,
     inputImageSize: 640,
     useHalfPrecision: false,
@@ -23,39 +25,46 @@ const ThermalAnalysisForm = ({
   });
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [useMockAnalysis, setUseMockAnalysis] = useState(false);
+
+  const createAnalysisRequest = () => {
+    const requestData = {
+      maintenanceImagePath: formData.maintenanceImagePath.toString(),
+      baselineImagePath: formData.baselineImagePath || undefined,
+      processingDevice: formData.processingDevice,
+      inputImageSize: formData.inputImageSize,
+      useHalfPrecision: formData.useHalfPrecision,
+      sensitivityPercentage: formData.sensitivityPercentage,
+      equipmentId: formData.equipmentId ? parseInt(formData.equipmentId) : undefined,
+      inspectionId: formData.inspectionId ? parseInt(formData.inspectionId) : undefined,
+      createdBy: formData.createdBy
+    };
+    
+    // Remove undefined values to match backend expectations
+    Object.keys(requestData).forEach(key => {
+      if (requestData[key] === undefined || requestData[key] === '') {
+        delete requestData[key];
+      }
+    });
+    
+    return requestData;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsAnalyzing(true);
 
     try {
-      // Prepare request data matching backend specification
-      const requestData = {
-        maintenanceImagePath: formData.maintenanceImagePath.toString(),
-        baselineImagePath: formData.baselineImagePath || undefined, // Send undefined instead of empty string
-        processingDevice: formData.processingDevice,
-        inputImageSize: formData.inputImageSize,
-        useHalfPrecision: formData.useHalfPrecision,
-        sensitivityPercentage: formData.sensitivityPercentage,
-        equipmentId: formData.equipmentId ? parseInt(formData.equipmentId) : undefined,
-        inspectionId: formData.inspectionId ? parseInt(formData.inspectionId) : undefined,
-        createdBy: formData.createdBy
-      };
-      
-      // Remove undefined values to match backend expectations
-      Object.keys(requestData).forEach(key => {
-        if (requestData[key] === undefined || requestData[key] === '') {
-          delete requestData[key];
-        }
-      });
+      let requestData = createAnalysisRequest();
       
       console.log('Submitting thermal analysis:', requestData);
-      const result = useMockAnalysis 
-        ? await thermalApi.analyzeMockImage(requestData)
-        : await thermalApi.analyzeImage(requestData);
+      
+      const result = await thermalApi.analyzeImage(requestData);
+        
+      console.log('Analysis completed successfully:', result);
       onAnalysisComplete(result);
-      showSuccess('Thermal analysis completed successfully');
+      
+      const analysisType = requestData.baselineImagePath ? 'Enhanced analysis' : 'Standard analysis';
+      showSuccess(`${analysisType} completed successfully`);
     } catch (err) {
       console.error('Form submission error:', err);
       showError(err.message || 'Thermal analysis failed');
@@ -67,37 +76,95 @@ const ThermalAnalysisForm = ({
   return (
     <div className="bg-white rounded-lg p-4 shadow-sm">
       {/* Image Information Display */}
-      {imageInfo && (
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="text-sm font-semibold text-blue-800">Selected Image for Analysis</h4>
-            <span className="text-xs text-blue-600">ID: {imageInfo.id}</span>
+      <div className="mb-4 space-y-3">
+        {/* Maintenance Image Info */}
+        {imageInfo && (
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-sm font-semibold text-blue-800">Maintenance Image</h4>
+              <span className="text-xs text-blue-600">ID: {imageInfo.id}</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-blue-700 mb-2">
+              <div>
+                <span className="font-medium">Uploader:</span> {imageInfo.uploaderName}
+              </div>
+              <div>
+                <span className="font-medium">Condition:</span> {imageInfo.environmentalCondition}
+              </div>
+              <div>
+                <span className="font-medium">Upload Time:</span> {new Date(imageInfo.uploadTime).toLocaleString()}
+              </div>
+            </div>
+            {imageInfo.imageUrl && (
+              <div className="mt-2">
+                <img 
+                  src={imageInfo.imageUrl} 
+                  alt="Selected for analysis" 
+                  className="w-32 h-20 object-cover rounded border"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-blue-700">
-            <div>
-              <span className="font-medium">Uploader:</span> {imageInfo.uploaderName}
+        )}
+
+        {/* Baseline Image Info */}
+        {baselineImageInfo ? (
+                  <div className="p-3 bg-green-50 rounded-lg">
+            <div className="flex items-center mb-2">
+              <h4 className="text-sm font-semibold text-green-800">Baseline Image</h4>
+              <span className="text-xs text-green-600 ml-2">ID: {baselineImageId}</span>
             </div>
-            <div>
-              <span className="font-medium">Condition:</span> {imageInfo.environmentalCondition}
+            <div className="text-xs text-green-700 space-y-1">
+              <div>
+                <span className="font-medium">Transformer:</span> {baselineImageInfo.transformerId}
+              </div>
+              <div>
+                <span className="font-medium">Uploader:</span> {baselineImageInfo.uploaderName || 'Unknown'}
+              </div>
+              <div>
+                <span className="font-medium">Upload Time:</span> {new Date(baselineImageInfo.uploadTime).toLocaleString()}
+              </div>
             </div>
-            <div>
-              <span className="font-medium">Upload Time:</span> {new Date(imageInfo.uploadTime).toLocaleString()}
+            {baselineImageInfo.imageUrl && (
+              <div className="mt-2">
+                <img 
+                  src={baselineImageInfo.imageUrl} 
+                  alt="Baseline reference" 
+                  className="w-32 h-20 object-cover rounded border"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            <div className="mt-2 text-xs text-green-600">
+              Enhanced analysis enabled
             </div>
           </div>
-          {imageInfo.imageUrl && (
-            <div className="mt-2">
-              <img 
-                src={imageInfo.imageUrl} 
-                alt="Selected for analysis" 
-                className="w-32 h-20 object-cover rounded border"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
+        ) : baselineImageId ? (
+          <div className="p-3 bg-yellow-50 rounded-lg">
+            <div className="flex items-center mb-2">
+              <h4 className="text-sm font-semibold text-yellow-800">Baseline Image</h4>
+              <span className="text-xs text-yellow-600 ml-2">ID: {baselineImageId}</span>
             </div>
-          )}
-        </div>
-      )}
+            <div className="text-xs text-yellow-700">
+              Baseline image reference provided but details not loaded
+            </div>
+          </div>
+        ) : (
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center mb-2">
+              <h4 className="text-sm font-semibold text-gray-600">📊 Baseline Image</h4>
+            </div>
+            <div className="text-xs text-gray-600">
+              ⚠️ No baseline image available - analysis will use fallback method with reduced accuracy
+            </div>
+          </div>
+        )}
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -132,13 +199,36 @@ const ThermalAnalysisForm = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Baseline Image ID (Optional)
             </label>
-            <input
-              type="text"
-              value={formData.baselineImagePath}
-              onChange={(e) => setFormData({...formData, baselineImagePath: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter baseline image ID"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.baselineImagePath}
+                onChange={(e) => setFormData({...formData, baselineImagePath: e.target.value})}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  baselineImageId ? 'bg-green-50' : ''
+                }`}
+                placeholder={baselineImageId ? "Baseline image auto-filled" : "Enter baseline image ID"}
+                readOnly={!!baselineImageId}
+              />
+              {baselineImageId && (
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <span className="text-green-600 text-sm">Baseline set</span>
+                </div>
+              )}
+            </div>
+            {baselineImageInfo ? (
+              <p className="text-xs text-green-600 mt-1">
+                Baseline: {baselineImageInfo.uploaderName} - {new Date(baselineImageInfo.uploadTime).toLocaleDateString()}
+              </p>
+            ) : baselineImageId ? (
+              <p className="text-xs text-green-600 mt-1">
+                Baseline ID: {baselineImageId}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500 mt-1">
+                No baseline - standard analysis will be used
+              </p>
+            )}
           </div>
         </div>
 
@@ -170,15 +260,7 @@ const ThermalAnalysisForm = ({
               <span className="text-sm font-medium text-gray-700">Use Half Precision</span>
             </label>
             
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={useMockAnalysis}
-                onChange={(e) => setUseMockAnalysis(e.target.checked)}
-                className="mr-2"
-              />
-              <span className="text-sm font-medium text-orange-600">Use Mock Analysis (for testing)</span>
-            </label>
+
           </div>
         </div>
 
@@ -201,6 +283,14 @@ const ThermalAnalysisForm = ({
           </div>
         </div>
 
+        <div className={`p-2 rounded text-xs ${
+          baselineImageId ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-600'
+        }`}>
+          <span className="font-medium">
+            {baselineImageId ? 'Enhanced Analysis' : 'Standard Analysis'}
+          </span>
+        </div>
+
         <div className="space-y-2">
           <button 
             type="submit" 
@@ -208,12 +298,14 @@ const ThermalAnalysisForm = ({
             className={`w-full py-2 px-4 rounded-md font-medium transition-colors ${
               isAnalyzing || !formData.maintenanceImagePath
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : baselineImageId 
+                ? 'bg-green-600 text-white hover:bg-green-700'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
-{isAnalyzing 
-              ? (useMockAnalysis ? 'Running Mock Analysis...' : 'Analyzing Thermal Image...') 
-              : (useMockAnalysis ? 'Start Mock Analysis' : 'Start Thermal Analysis')
+            {isAnalyzing 
+              ? 'Analyzing...' 
+              : baselineImageId ? 'Start Enhanced Analysis' : 'Start Analysis'
             }
           </button>
           

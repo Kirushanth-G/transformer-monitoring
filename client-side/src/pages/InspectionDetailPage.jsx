@@ -799,8 +799,15 @@ function InspectionDetailPage() {
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6'>
                 {/* Baseline Image */}
                 <div className='bg-gray-50 rounded-lg overflow-hidden'>
-                  <div className='bg-blue-600 text-white px-4 py-2 text-sm font-medium'>
-                    Baseline (Transformer)
+                  <div className={`text-white px-4 py-2 text-sm font-medium flex justify-between items-center ${
+                    transformerBaselineImage ? 'bg-green-600' : 'bg-gray-600'
+                  }`}>
+                    <span>Baseline (Transformer)</span>
+                    {transformerBaselineImage && (
+                      <span className='px-2 py-1 rounded text-xs font-bold bg-green-700'>
+                        ENHANCED ANALYSIS
+                      </span>
+                    )}
                   </div>
                   <div className='aspect-video bg-gray-100 relative flex items-center justify-center'>
                     {loadingTransformerImage ? (
@@ -827,9 +834,13 @@ function InspectionDetailPage() {
                       </>
                     ) : (
                       <div className='text-center text-gray-500'>
-                        <div className='text-sm'>No baseline image</div>
-                        <div className='text-xs opacity-75'>
+                        <div className='text-2xl mb-2'>📊</div>
+                        <div className='text-sm font-medium mb-1'>No baseline image</div>
+                        <div className='text-xs opacity-75 mb-2'>
                           {transformer ? `Transformer ${transformer.transformerId} (ID: ${transformer.id}) baseline not available` : 'Transformer baseline not available'}
+                        </div>
+                        <div className='text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded'>
+                          ⚠️ Analysis will use fallback method with reduced accuracy
                         </div>
                       </div>
                     )}
@@ -1128,31 +1139,66 @@ function InspectionDetailPage() {
 
                 {showThermalAnalysis && (
                   <div className='space-y-4'>
-                    {/* Image Information Display */}
-                    {inspectionImage && (
-                      <div className='bg-blue-50 rounded-lg p-4'>
-                        <h4 className='text-sm font-semibold text-blue-800 mb-2'>Image for Analysis</h4>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm'>
-                          <div>
-                            <p className='text-blue-600'>Image ID: <span className='font-semibold'>{inspectionImage.id}</span></p>
-                            <p className='text-blue-600'>Uploader: {inspectionImage.uploaderName}</p>
-                          </div>
-                          <div>
-                            <p className='text-blue-600'>Environment: {inspectionImage.environmentalCondition}</p>
-                            <p className='text-blue-600'>Upload Time: {new Date(inspectionImage.uploadTime).toLocaleString()}</p>
+                    {/* Analysis Configuration Summary */}
+                    <div className='space-y-3'>
+                      {/* Maintenance Image Info */}
+                      {inspectionImage && (
+                        <div className='bg-blue-50 rounded-lg p-4'>
+                          <h4 className='text-sm font-semibold text-blue-800 mb-2'>🔍 Current Inspection Image</h4>
+                          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm'>
+                            <div>
+                              <p className='text-blue-600'>Image ID: <span className='font-semibold'>{inspectionImage.id}</span></p>
+                              <p className='text-blue-600'>Uploader: {inspectionImage.uploaderName}</p>
+                            </div>
+                            <div>
+                              <p className='text-blue-600'>Environment: {inspectionImage.environmentalCondition}</p>
+                              <p className='text-blue-600'>Upload Time: {new Date(inspectionImage.uploadTime).toLocaleString()}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+
+                      {/* Baseline Configuration Info */}
+                      {transformerBaselineImage ? (
+                        <div className='bg-green-50 rounded-lg p-4'>
+                          <h4 className='text-sm font-semibold text-green-800 mb-2'>📊 Baseline Reference Available</h4>
+                          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm'>
+                            <div>
+                              <p className='text-green-600'>Baseline ID: <span className='font-semibold'>{transformerBaselineImage.id}</span></p>
+                              <p className='text-green-600'>Transformer: {transformerBaselineImage.transformerId}</p>
+                            </div>
+                            <div>
+                              <p className='text-green-600'>Uploader: {transformerBaselineImage.uploaderName || 'Unknown'}</p>
+                              <p className='text-green-600'>Upload Time: {new Date(transformerBaselineImage.uploadTime).toLocaleString()}</p>
+                            </div>
+                          </div>
+                          <div className='mt-3 text-xs text-green-700 bg-green-100 p-2 rounded'>
+                            ✅ Enhanced analysis enabled - comparing current vs baseline for better accuracy
+                          </div>
+                        </div>
+                      ) : (
+                        <div className='bg-yellow-50 rounded-lg p-4'>
+                          <h4 className='text-sm font-semibold text-yellow-800 mb-2'>📊 Baseline Reference</h4>
+                          <div className='text-sm text-yellow-700 mb-2'>
+                            No baseline image available for transformer {transformer?.transformerId || inspection.transformerId}
+                          </div>
+                          <div className='text-xs text-yellow-700 bg-yellow-100 p-2 rounded'>
+                            ⚠️ Analysis will use fallback method with spatial contrast only. Upload a transformer baseline for enhanced accuracy.
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     
                     <ThermalAnalysisForm
                       onAnalysisComplete={handleAnalysisComplete}
                       selectedImageId={inspectionImage?.id?.toString() || ''}
+                      baselineImageId={transformerBaselineImage?.id?.toString() || ''}
                       equipmentId={transformer?.id || inspection.transformerId}
                       inspectionId={inspection.id}
                       showSuccess={showSuccess}
                       showError={showError}
                       imageInfo={inspectionImage}
+                      baselineImageInfo={transformerBaselineImage}
                     />
                   </div>
                 )}

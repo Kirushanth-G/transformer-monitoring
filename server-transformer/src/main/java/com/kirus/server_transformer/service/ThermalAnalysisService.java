@@ -39,6 +39,9 @@ public class ThermalAnalysisService {
     private InspectionImageRepository inspectionImageRepository;
 
     @Autowired
+    private TransformerImageRepository transformerImageRepository;
+
+    @Autowired
     private TransformerRepository transformerRepository;
 
     @Autowired
@@ -53,19 +56,27 @@ public class ThermalAnalysisService {
         try {
             // Validate images exist before starting analysis
             validateImageExists(request.getMaintenanceImagePath(), "Maintenance image");
+            
+            // Validate baseline image exists in transformer_images table, but handle gracefully if not found
+            boolean hasValidBaseline = false;
             if (request.getBaselineImagePath() != null && !request.getBaselineImagePath().trim().isEmpty()) {
-                validateImageExists(request.getBaselineImagePath(), "Baseline image");
+                try {
+                    validateTransformerImageExists(request.getBaselineImagePath(), "Baseline image");
+                    hasValidBaseline = true;
+                } catch (RuntimeException e) {
+                    logger.warn("Baseline image validation failed, proceeding with standard analysis: {}", e.getMessage());
+                    // Continue without baseline - this will trigger fallback analysis
+                    hasValidBaseline = false;
+                }
             }
 
             // Validate and get image URLs
             String maintenanceImageUrl = resolveImageUrl(request.getMaintenanceImagePath());
-            String baselineImageUrl = request.getBaselineImagePath() != null && !request.getBaselineImagePath().trim().isEmpty() ?
-                    resolveImageUrl(request.getBaselineImagePath()) : null;
+            String baselineImageUrl = hasValidBaseline ? resolveTransformerImageUrl(request.getBaselineImagePath()) : null;
 
             // Get image entities
             InspectionImage maintenanceImage = getInspectionImageById(request.getMaintenanceImagePath());
-            InspectionImage baselineImage = request.getBaselineImagePath() != null && !request.getBaselineImagePath().trim().isEmpty() ?
-                    getInspectionImageById(request.getBaselineImagePath()) : null;
+            TransformImage baselineImage = hasValidBaseline ? getTransformerImageById(request.getBaselineImagePath()) : null;
 
             // Prepare FastAPI request
             FastApiThermalRequest fastApiRequest = new FastApiThermalRequest();
@@ -85,7 +96,7 @@ public class ThermalAnalysisService {
                 fastApiResponse.getDetections() != null ? fastApiResponse.getDetections().size() : 0);
 
             // Create and save thermal analysis entity
-            ThermalAnalysis analysis = createThermalAnalysis(request, maintenanceImage, baselineImage, fastApiResponse);
+            ThermalAnalysis analysis = createThermalAnalysis(request, maintenanceImage, fastApiResponse);
             final ThermalAnalysis savedAnalysis = thermalAnalysisRepository.save(analysis);
 
             logger.info("Thermal analysis saved with ID: {}", savedAnalysis.getId());
@@ -278,6 +289,72 @@ public class ThermalAnalysisService {
         }
     }
 
+    private void validateTransformerImageExists(String imagePath, String imageType) {
+        if (imagePath == null || imagePath.trim().isEmpty()) {
+            throw new IllegalArgumentException(imageType + " path cannot be null or empty");
+        }
+
+        if (imagePath.startsWith("http")) {
+            logger.info("{} is an HTTP URL, skipping validation", imageType);
+            return;
+        }
+
+        try {
+            Long imageId = Long.parseLong(imagePath.trim());
+            boolean exists = transformerImageRepository.existsById(imageId);
+            if (!exists) {
+                throw new RuntimeException(imageType + " not found with ID: " + imageId);
+            }
+            logger.info("Validated {} exists with ID: {}", imageType, imageId);
+        } catch (NumberFormatException e) {
+            logger.info("{} '{}' treated as S3 key, will validate during URL generation", imageType, imagePath);
+        }
+    }
+
+    private String resolveTransformerImageUrl(String imagePath) {
+        if (imagePath == null || imagePath.trim().isEmpty()) {
+            throw new IllegalArgumentException("Image path cannot be null or empty");
+        }
+
+        if (imagePath.startsWith("http")) {
+            return imagePath; // Already a URL
+        }
+
+        try {
+            Long imageId = Long.parseLong(imagePath.trim());
+            if (!transformerImageRepository.existsById(imageId)) {
+                throw new RuntimeException("Transformer image not found with ID: " + imageId);
+            }
+
+            TransformImage image = transformerImageRepository.findById(imageId)
+                    .orElseThrow(() -> new RuntimeException("Transformer image not found with ID: " + imageId));
+
+            if (image.getImageUrl() == null || image.getImageUrl().trim().isEmpty()) {
+                throw new RuntimeException("Transformer image URL is null or empty for image ID: " + imageId);
+            }
+
+            return s3Service.generatePresignedUrl(image.getImageUrl());
+        } catch (NumberFormatException e) {
+            logger.info("Treating '{}' as S3 key rather than image ID", imagePath);
+            return s3Service.generatePresignedUrl(imagePath);
+        }
+    }
+
+    private TransformImage getTransformerImageById(String imagePath) {
+        if (imagePath == null || imagePath.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            Long imageId = Long.parseLong(imagePath.trim());
+            return transformerImageRepository.findById(imageId)
+                    .orElseThrow(() -> new RuntimeException("Transformer image not found with ID: " + imageId));
+        } catch (NumberFormatException e) {
+            logger.warn("Cannot get TransformImage entity for non-numeric path: {}", imagePath);
+            return null;
+        }
+    }
+
     private InspectionImage getInspectionImageById(String imagePath) {
         if (imagePath == null || imagePath.trim().isEmpty()) {
             return null;
@@ -295,11 +372,10 @@ public class ThermalAnalysisService {
 
     private ThermalAnalysis createThermalAnalysis(ThermalAnalysisRequest request,
                                                  InspectionImage maintenanceImage,
-                                                 InspectionImage baselineImage,
                                                  FastApiThermalResponse fastApiResponse) {
         ThermalAnalysis analysis = new ThermalAnalysis();
         analysis.setMaintenanceImage(maintenanceImage);
-        analysis.setBaselineImage(baselineImage);
+        // Note: baseline image is stored in transformer_images table, not inspection_images
         analysis.setAnalysisTimestamp(LocalDateTime.now());
         analysis.setOverallAssessment(parseAssessmentType(fastApiResponse.getOverallAssessment()));
         analysis.setAnomalyScore(BigDecimal.valueOf(fastApiResponse.getAnomalyScore() != null ?

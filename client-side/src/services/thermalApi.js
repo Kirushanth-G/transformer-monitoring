@@ -16,7 +16,8 @@ export const thermalApi = {
         statusText: error.response?.statusText,
         data: error.response?.data,
         message: error.message,
-        config: error.config
+        url: error.config?.url,
+        method: error.config?.method
       });
       
       if (error.response?.status === 400) {
@@ -97,6 +98,8 @@ export const thermalApi = {
     });
     return response.data;
   },
+
+
 
   // Get latest analysis for equipment
   getLatestAnalysis: async (equipmentId) => {

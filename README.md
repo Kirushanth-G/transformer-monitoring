@@ -1,30 +1,4 @@
 # Transformer Monitoring System
-
-A comprehensive electrical transformer#### 1. Environment Variables Setup
-
-**⚠️ SECURITY WARNING: Never commit credentials to version control!**
-
-**Set environment variables for backend:**
-```bash
-export PSQL_USER=your_postgres_username
-export PSQL_PASSWORD=your_postgres_password
-export AWS_ACCESS_KEY=your_aws_access_key
-export AWS_SECRET_KEY=your_aws_secret_key
-```
-
-**Alternative: Create a `.env` file in the backend directory (recommended):**
-```bash
-# server-transformer/.env
-PSQL_USER=your_postgres_username
-PSQL_PASSWORD=your_postgres_password
-AWS_ACCESS_KEY=your_aws_access_key
-AWS_SECRET_KEY=your_aws_secret_key
-```
-
-*Notes:* 
-- *Database is hosted on AWS RDS, so no local PostgreSQL setup is required.*
-- *Add `.env` to your `.gitignore` file to prevent committing credentials.* system with React frontend, Spring Boot backend, and Python FastAPI CV service for thermal analysis.
-
 ## Application hosting
 
 Application is hosted on AWS platform as follows (currently not available).

@@ -1,28 +1,39 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
- * The improved AnnotateImageModal component.
- * It uses a state-driven approach with useEffect to handle all canvas drawing,
- * which resolves race conditions and makes the component more reliable.
+ * An advanced image annotation modal for Phase 3.
+ *
+ * This component allows users to validate, correct, add, and delete annotations
+ * on an image. It's designed to work with an initial set of AI-detected anomalies.
+ *
+ * @param {boolean} isOpen - Controls if the modal is visible.
+ * @param {function} onClose - Function to call when closing the modal without saving.
+ * @param {function} onSave - Function to call when saving annotations. It receives an object
+ * with all the annotation changes ({ added, edited, deleted }).
+ * @param {string} imageUrl - The URL of the image to annotate.
+ * @param {Array} initialAnnotations - An array of AI-detected annotations to load initially.
+ * Expected format: [{ x, y, width, height, label, confidence, isCritical }]
  */
-function AnnotateImageModal({ isOpen, onClose, imageUrl }) {
+function AnnotateImageModal({ isOpen, onClose, onSave, imageUrl, initialAnnotations = [] }) {
   // --- Refs for canvases and image ---
-  const imageCanvasRef = useRef(null);      // For the base image
-  const annotationCanvasRef = useRef(null); // For drawing annotations
-  const imageRef = useRef(null);            // To hold the loaded image element
+  const imageCanvasRef = useRef(null);
+  const annotationCanvasRef = useRef(null);
+  const imageRef = useRef(null);
 
   // --- State management ---
-  const [boxes, setBoxes] = useState([]);   // Array of all annotation boxes {x, y, width, height}
-  const [selectedBox, setSelectedBox] = useState(null); // Index of the selected box
-  
-  // State for interaction (drawing, resizing, moving)
-  const [interaction, setInteraction] = useState({ type: 'none' }); // 'none', 'drawing', 'resizing', 'moving'
+  // `boxes` holds the complete state for all annotations being worked on.
+  const [boxes, setBoxes] = useState([]);
+  const [selectedBoxId, setSelectedBoxId] = useState(null);
+
+  // State for real-time interaction (drawing, resizing, moving)
+  const [interaction, setInteraction] = useState({ type: 'none' });
   const [startPoint, setStartPoint] = useState({ x: 0, y: 0 });
-  const [currentDrawingBox, setCurrentDrawingBox] = useState(null); // Temp box while drawing
+  const [currentDrawingBox, setCurrentDrawingBox] = useState(null);
 
   // --- Utility Functions ---
 
-  // Helper to get mouse coordinates relative to the canvas
+  // Get mouse coordinates relative to the canvas, accounting for scaling.
   const getCanvasCoords = (e) => {
     const canvas = annotationCanvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
@@ -34,24 +45,24 @@ function AnnotateImageModal({ isOpen, onClose, imageUrl }) {
       y: (e.clientY - rect.top) * scaleY,
     };
   };
-  
+
   // --- Drawing Logic ---
 
-  // Draws the resize handles for a selected box
+  // Draws resize handles for a selected box.
   const drawResizeHandles = (ctx, box) => {
     const handleSize = 8;
-    ctx.fillStyle = '#3b82f6'; // Tailwind's blue-500
+    ctx.fillStyle = '#3b82f6'; // blue-500
     const handles = getResizeHandles(box);
     Object.values(handles).forEach(pos => {
       ctx.fillRect(pos.x - handleSize / 2, pos.y - handleSize / 2, handleSize, handleSize);
     });
   };
 
-  // Draws the delete button for a selected box
+  // Draws the delete button for a selected box.
   const drawDeleteButton = (ctx, box) => {
     const { x, y } = getDeleteButtonCoords(box);
     const size = 20;
-    ctx.fillStyle = '#ef4444'; // Tailwind's red-500
+    ctx.fillStyle = '#ef4444'; // red-500
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
     ctx.fillRect(x - size / 2, y - size / 2, size, size);
@@ -62,36 +73,29 @@ function AnnotateImageModal({ isOpen, onClose, imageUrl }) {
     ctx.textBaseline = 'middle';
     ctx.fillText('×', x, y);
   };
-  
+
   // --- Coordinate and Hit-Detection Logic ---
 
-  const getResizeHandles = (box) => {
-    return {
-      topLeft: { x: box.x, y: box.y },
-      topRight: { x: box.x + box.width, y: box.y },
-      bottomLeft: { x: box.x, y: box.y + box.height },
-      bottomRight: { x: box.x + box.width, y: box.y + box.height },
-    };
-  };
+  const getResizeHandles = (box) => ({
+    topLeft: { x: box.x, y: box.y },
+    topRight: { x: box.x + box.width, y: box.y },
+    bottomLeft: { x: box.x, y: box.y + box.height },
+    bottomRight: { x: box.x + box.width, y: box.y + box.height },
+  });
 
-  const getDeleteButtonCoords = (box) => {
-      return { x: box.x + box.width, y: box.y };
-  };
+  const getDeleteButtonCoords = (box) => ({ x: box.x + box.width, y: box.y });
 
   const checkInteractionType = (x, y) => {
-    // Check for interaction with the currently selected box first
-    if (selectedBox !== null) {
-      const box = boxes[selectedBox];
+    const selectedBox = boxes.find(b => b.id === selectedBoxId);
+
+    if (selectedBox) {
       const handleSize = 10;
-      
-      // Check delete button
-      const delBtn = getDeleteButtonCoords(box);
+      const delBtn = getDeleteButtonCoords(selectedBox);
       if (Math.abs(x - delBtn.x) < handleSize && Math.abs(y - delBtn.y) < handleSize) {
         return { type: 'delete' };
       }
-      
-      // Check resize handles
-      const handles = getResizeHandles(box);
+
+      const handles = getResizeHandles(selectedBox);
       for (const [handleName, pos] of Object.entries(handles)) {
         if (Math.abs(x - pos.x) < handleSize && Math.abs(y - pos.y) < handleSize) {
           return { type: 'resizing', handle: handleName };
@@ -99,75 +103,92 @@ function AnnotateImageModal({ isOpen, onClose, imageUrl }) {
       }
     }
 
-    // Check if clicking inside any existing box to select/move it
-    const clickedBoxIndex = boxes.findIndex(b => 
-      x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height
+    const clickedBox = boxes.find(b =>
+      b.status !== 'deleted' && x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height
     );
-    if (clickedBoxIndex !== -1) {
-      return { type: 'moving', boxIndex: clickedBoxIndex };
+
+    if (clickedBox) {
+      return { type: 'moving', boxId: clickedBox.id };
     }
 
-    // If no other interaction, start drawing a new box
     return { type: 'drawing' };
   };
 
-
   // --- Effects ---
 
-  // Effect to load the image and set up canvas dimensions
+  // Effect to load the image, set up canvas dimensions, and load initial annotations.
   useEffect(() => {
     if (isOpen && imageUrl) {
-      const imageCanvas = imageCanvasRef.current;
-      const annotationCanvas = annotationCanvasRef.current;
-      const ctx = imageCanvas.getContext('2d');
+        const image = new Image();
+        image.crossOrigin = "anonymous"; // Handle CORS if image is from another domain
+        image.src = imageUrl;
+        image.onload = () => {
+            imageRef.current = image;
+            const imageCanvas = imageCanvasRef.current;
+            const annotationCanvas = annotationCanvasRef.current;
+            if (!imageCanvas || !annotationCanvas) return;
 
-      // Load the image once
-      const image = new Image();
-      image.src = imageUrl;
-      image.onload = () => {
-        imageRef.current = image;
-        // Set both canvases to image size
-        imageCanvas.width = image.width;
-        imageCanvas.height = image.height;
-        annotationCanvas.width = image.width;
-        annotationCanvas.height = image.height;
-        
-        // Draw image on base canvas
-        ctx.drawImage(image, 0, 0);
-        // Draw existing boxes
-        drawBoxes();
-      };
+            imageCanvas.width = image.naturalWidth;
+            imageCanvas.height = image.naturalHeight;
+            annotationCanvas.width = image.naturalWidth;
+            annotationCanvas.height = image.naturalHeight;
+
+            const ctx = imageCanvas.getContext('2d');
+            ctx.drawImage(image, 0, 0);
+
+            // Process initial AI annotations
+            const formattedBoxes = initialAnnotations.map(anno => ({
+                ...anno,
+                id: uuidv4(),
+                status: 'ai-detected',
+            }));
+            setBoxes(formattedBoxes);
+        };
+        image.onerror = () => {
+            console.error("Failed to load image for annotation.");
+        };
     }
-  }, [isOpen, imageUrl]);
+  }, [isOpen, imageUrl, initialAnnotations]);
 
-  // THE CORE FIX: A single effect to handle all drawing based on state
+
+  // THE CORE: A single effect to handle all drawing based on state changes.
   useEffect(() => {
     if (!isOpen || !annotationCanvasRef.current) return;
     const canvas = annotationCanvasRef.current;
     const ctx = canvas.getContext('2d');
-    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw all committed boxes
-    boxes.forEach((box, index) => {
-      const isSelected = selectedBox === index;
-      ctx.strokeStyle = isSelected ? '#3b82f6' : '#ef4444';
-      ctx.lineWidth = isSelected ? 3 : 2;
+    boxes.forEach(box => {
+      if (box.status === 'deleted') return; // Don't draw deleted boxes
+
+      const isSelected = selectedBoxId === box.id;
+      
+      // Different colors for different statuses
+      if (isSelected) {
+        ctx.strokeStyle = '#3b82f6'; // blue-500 for selected
+        ctx.lineWidth = 3;
+      } else if (box.status === 'user-added' || box.status === 'user-edited') {
+        ctx.strokeStyle = '#16a34a'; // green-600 for user-modified
+        ctx.lineWidth = 2;
+      } else { // 'ai-detected'
+        ctx.strokeStyle = '#facc15'; // yellow-400 for AI
+        ctx.lineWidth = 2;
+      }
+
       ctx.strokeRect(box.x, box.y, box.width, box.height);
+
       if (isSelected) {
         drawResizeHandles(ctx, box);
         drawDeleteButton(ctx, box);
       }
     });
 
-    // Draw the temporary box being created
     if (currentDrawingBox) {
-      ctx.strokeStyle = '#ef4444';
+      ctx.strokeStyle = '#16a34a'; // green-600 while drawing
       ctx.lineWidth = 2;
       ctx.strokeRect(currentDrawingBox.x, currentDrawingBox.y, currentDrawingBox.width, currentDrawingBox.height);
     }
-  }, [boxes, selectedBox, currentDrawingBox, isOpen]); // Redraw whenever state changes
-
+  }, [boxes, selectedBoxId, currentDrawingBox, isOpen]);
 
   // --- Event Handlers ---
 
@@ -179,20 +200,24 @@ function AnnotateImageModal({ isOpen, onClose, imageUrl }) {
     const interactionResult = checkInteractionType(x, y);
 
     if (interactionResult.type === 'delete') {
-      setBoxes(boxes.filter((_, i) => i !== selectedBox));
-      setSelectedBox(null);
+      setBoxes(boxes.map(box => {
+        if (box.id === selectedBoxId) {
+          // If it was an AI box, mark as deleted. If user-added, remove it.
+          return box.status === 'ai-detected' || box.status === 'user-edited'
+            ? { ...box, status: 'deleted' }
+            : null;
+        }
+        return box;
+      }).filter(Boolean)); // filter(Boolean) removes nulls
+      setSelectedBoxId(null);
       setInteraction({ type: 'none' });
       return;
     }
-    
+
     if (interactionResult.type === 'moving') {
-        setSelectedBox(interactionResult.boxIndex);
+      setSelectedBoxId(interactionResult.boxId);
     } else {
-        setSelectedBox(null);
-    }
-    
-    if (interactionResult.type === 'drawing') {
-        setSelectedBox(null);
+      setSelectedBoxId(null);
     }
 
     setInteraction(interactionResult);
@@ -201,62 +226,51 @@ function AnnotateImageModal({ isOpen, onClose, imageUrl }) {
   const handleMouseMove = (e) => {
     e.preventDefault();
     const { x, y } = getCanvasCoords(e);
-    const dx = x - startPoint.x;
-    const dy = y - startPoint.y;
-
-    // Update cursor style
-    const canvas = annotationCanvasRef.current;
-    if (canvas) {
-        const interactionCheck = checkInteractionType(x, y);
-        if (interactionCheck.type === 'resizing') {
-            canvas.style.cursor = 'crosshair'; // Specific resize cursors can be added
-        } else if (interactionCheck.type === 'moving' || (selectedBox !== null && interactionCheck.type !== 'drawing')) {
-            canvas.style.cursor = 'move';
-        } else if (interactionCheck.type === 'delete') {
-            canvas.style.cursor = 'pointer';
-        } else {
-            canvas.style.cursor = 'crosshair';
-        }
-    }
 
     switch (interaction.type) {
       case 'drawing': {
-        setCurrentDrawingBox({ x: startPoint.x, y: startPoint.y, width: dx, height: dy });
+        const width = x - startPoint.x;
+        const height = y - startPoint.y;
+        setCurrentDrawingBox({ x: startPoint.x, y: startPoint.y, width, height });
         break;
       }
       case 'moving': {
-        const newBoxes = [...boxes];
-        const movedBox = { ...newBoxes[interaction.boxIndex] };
-        movedBox.x += dx;
-        movedBox.y += dy;
-        newBoxes[interaction.boxIndex] = movedBox;
-        setBoxes(newBoxes);
-        setStartPoint({ x, y }); // Update start point for smooth dragging
+        setBoxes(boxes.map(box => {
+          if (box.id === interaction.boxId) {
+            return {
+              ...box,
+              x: x - (startPoint.x - box.x),
+              y: y - (startPoint.y - box.y),
+              status: box.status === 'ai-detected' ? 'user-edited' : box.status,
+            };
+          }
+          return box;
+        }));
         break;
       }
       case 'resizing': {
-        const newBoxes = [...boxes];
-        const box = { ...newBoxes[selectedBox] };
-        const { handle } = interaction;
-        
-        if (handle.includes('Left')) {
-          box.x = x;
-          box.width -= dx;
-        }
-        if (handle.includes('Right')) {
-          box.width = x - box.x;
-        }
-        if (handle.includes('Top')) {
-          box.y = y;
-          box.height -= dy;
-        }
-        if (handle.includes('Bottom')) {
-          box.height = y - box.y;
-        }
-        
-        newBoxes[selectedBox] = box;
-        setBoxes(newBoxes);
-        setStartPoint({ x, y }); // Update for smooth resizing
+        setBoxes(boxes.map(box => {
+          if (box.id === selectedBoxId) {
+            const newBox = { ...box };
+            const { handle } = interaction;
+            if (handle.includes('Left')) {
+                newBox.width = newBox.x + newBox.width - x;
+                newBox.x = x;
+            }
+            if (handle.includes('Right')) {
+                newBox.width = x - newBox.x;
+            }
+            if (handle.includes('Top')) {
+                newBox.height = newBox.y + newBox.height - y;
+                newBox.y = y;
+            }
+            if (handle.includes('Bottom')) {
+                newBox.height = y - newBox.y;
+            }
+            return { ...newBox, status: newBox.status === 'ai-detected' ? 'user-edited' : newBox.status };
+          }
+          return box;
+        }));
         break;
       }
       default:
@@ -267,7 +281,6 @@ function AnnotateImageModal({ isOpen, onClose, imageUrl }) {
   const handleMouseUp = (e) => {
     e.preventDefault();
     if (interaction.type === 'drawing' && currentDrawingBox) {
-      // Normalize box dimensions (handle drawing in any direction)
       const newBox = {
         x: currentDrawingBox.width < 0 ? currentDrawingBox.x + currentDrawingBox.width : currentDrawingBox.x,
         y: currentDrawingBox.height < 0 ? currentDrawingBox.y + currentDrawingBox.height : currentDrawingBox.y,
@@ -275,33 +288,49 @@ function AnnotateImageModal({ isOpen, onClose, imageUrl }) {
         height: Math.abs(currentDrawingBox.height),
       };
       if (newBox.width > 5 && newBox.height > 5) {
-        setBoxes([...boxes, newBox]);
-        setSelectedBox(boxes.length);
+        const finalBox = { ...newBox, id: uuidv4(), status: 'user-added' };
+        setBoxes([...boxes, finalBox]);
+        setSelectedBoxId(finalBox.id);
       }
     } else if (interaction.type === 'resizing' || interaction.type === 'moving') {
-        const newBoxes = boxes.map(box => ({
-            ...box,
-            width: Math.abs(box.width),
-            height: Math.abs(box.height),
-            x: box.width < 0 ? box.x + box.width : box.x,
-            y: box.height < 0 ? box.y + box.height : box.y,
+        // Normalize box dimensions after interaction
+        setBoxes(boxes.map(box => {
+            if (box.width < 0) {
+                box.x += box.width;
+                box.width = Math.abs(box.width);
+            }
+            if (box.height < 0) {
+                box.y += box.height;
+                box.height = Math.abs(box.height);
+            }
+            return box;
         }));
-        setBoxes(newBoxes);
     }
-    
-    // Reset interaction state
+
     setInteraction({ type: 'none' });
     setCurrentDrawingBox(null);
   };
   
-  const clearCanvas = () => {
-    setBoxes([]);
-    setSelectedBox(null);
+  // Clears all user modifications and resets to initial AI state.
+  const handleClear = () => {
+     const formattedBoxes = initialAnnotations.map(anno => ({
+        ...anno,
+        id: uuidv4(),
+        status: 'ai-detected',
+    }));
+    setBoxes(formattedBoxes);
+    setSelectedBoxId(null);
   };
 
-  const saveAnnotations = () => {
-    console.log('Final Box coordinates:', boxes);
-    onClose();
+  // Process and save all annotations
+  const handleSave = () => {
+    const feedback = {
+      added: boxes.filter(b => b.status === 'user-added'),
+      edited: boxes.filter(b => b.status === 'user-edited'),
+      deleted: boxes.filter(b => b.status === 'deleted'),
+    };
+    onSave(feedback);
+    onClose(); // Close modal after saving
   };
 
 
@@ -311,24 +340,32 @@ function AnnotateImageModal({ isOpen, onClose, imageUrl }) {
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg p-4 w-[90vw] max-w-[1200px] max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center mb-4 border-b pb-3">
-          <h2 className="text-xl font-semibold text-gray-800">Image Annotation</h2>
+          <h2 className="text-xl font-semibold text-gray-800">Review & Annotate Detections</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-red-600 text-3xl font-light">&times;</button>
         </div>
 
         <div className="mb-4 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            Click and drag to draw. Click a box to select, move, resize, or delete.
+          <div className="text-sm text-gray-600 flex items-center space-x-4">
+            <span>Click and drag to draw. Click a box to select, move, resize, or delete.</span>
+            <div className="flex items-center space-x-2">
+                <span className="w-4 h-4 bg-yellow-400 border border-gray-400"></span>
+                <span className="text-xs">AI Detected</span>
+            </div>
+            <div className="flex items-center space-x-2">
+                <span className="w-4 h-4 bg-green-600 border border-gray-400"></span>
+                <span className="text-xs">User Modified</span>
+            </div>
           </div>
           <button
-            onClick={clearCanvas}
+            onClick={handleClear}
             className="px-4 py-1 bg-red-100 text-red-600 rounded-md hover:bg-red-200 text-sm font-medium"
           >
-            Clear All
+            Reset to AI Detections
           </button>
         </div>
 
         <div className="overflow-auto flex-grow flex items-center justify-center bg-gray-100 rounded-md" 
-             style={{ height: 'calc(85vh - 120px)' }}>  {/* Subtract header and footer height */}
+             style={{ height: 'calc(85vh - 120px)' }}>
           <div className="relative" style={{ width: 'fit-content' }}>
             <canvas ref={imageCanvasRef} className="block rounded-md shadow-md" />
             <canvas
@@ -336,8 +373,8 @@ function AnnotateImageModal({ isOpen, onClose, imageUrl }) {
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
-              onMouseOut={handleMouseUp} // End drawing if mouse leaves canvas
-              className="absolute top-0 left-0"
+              onMouseLeave={handleMouseUp} // End interaction if mouse leaves canvas
+              className="absolute top-0 left-0 cursor-crosshair"
             />
           </div>
         </div>
@@ -350,7 +387,7 @@ function AnnotateImageModal({ isOpen, onClose, imageUrl }) {
             Cancel
           </button>
           <button
-            onClick={saveAnnotations}
+            onClick={handleSave}
             className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold"
           >
             Save Annotations

@@ -4,7 +4,6 @@ import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import NotificationManager from '../components/NotificationManager';
-import InspectionImageDisplay from '../components/InspectionImageDisplay';
 import ThermalAnalysisForm from '../components/ThermalAnalysisForm';
 import ThermalAnalysisResults from '../components/ThermalAnalysisResults';
 import { useNotifications } from '../hooks/useNotifications';
@@ -59,6 +58,10 @@ function InspectionDetailPage() {
 
   // Annotation modal state
   const [isAnnotateModalOpen, setIsAnnotateModalOpen] = useState(false);
+
+  // Add these with other state declarations
+  const [annotationImageUrl, setAnnotationImageUrl] = useState(null);
+  const [loadingAnnotationImage, setLoadingAnnotationImage] = useState(false);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -372,6 +375,38 @@ function InspectionDetailPage() {
     }
   };
 
+  /**
+   * Handles saving the feedback from the annotation modal.
+   * This function receives the user's changes and sends them to the backend.
+   */
+  const handleSaveAnnotations = useCallback(async (feedback) => {
+    if (!inspection?.id || !inspectionImage?.id) {
+      showError("Cannot save annotations without an inspection and image ID.");
+      return;
+    }
+
+    console.log('Saving annotation feedback:', feedback);
+
+    try {
+      // API call to the backend to persist the annotation feedback.
+      // A new endpoint will need to be created on the backend to handle this.
+      await axios.post(`/api/inspections/${id}/annotations`, {
+        imageId: inspectionImage.id,
+        feedback,
+        // You might also include a user ID from an auth context here
+      });
+
+      showSuccess('Annotations saved successfully!');
+      // Refresh analysis history to reflect the saved annotations,
+      // which might be used in the future to show "Reviewed" status.
+      fetchImageAnalysisHistory();
+    } catch (error) {
+      console.error('Failed to save annotations:', error);
+      showError('Could not save annotations. Please try again.');
+    }
+  }, [id, inspection?.id, inspectionImage?.id, showSuccess, showError, fetchImageAnalysisHistory]);
+
+
   // Handle file selection
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -492,6 +527,40 @@ function InspectionDetailPage() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // Add this effect after other useEffects
+  useEffect(() => {
+    if (isAnnotateModalOpen && inspectionImage?.imageUrl) {
+      let objectUrl;
+      const loadImageForAnnotation = async () => {
+        setLoadingAnnotationImage(true);
+        try {
+          const response = await fetch(inspectionImage.imageUrl);
+          if (!response.ok) {
+            throw new Error('Network response was not ok for fetching image blob.');
+          }
+          const imageBlob = await response.blob();
+          objectUrl = URL.createObjectURL(imageBlob);
+          setAnnotationImageUrl(objectUrl);
+        } catch (err) {
+          console.error("CORS issue or network error preventing image fetch for canvas:", err);
+          showError("Could not load image for annotation due to security restrictions (CORS).");
+          setIsAnnotateModalOpen(false);
+        } finally {
+          setLoadingAnnotationImage(false);
+        }
+      };
+
+      loadImageForAnnotation();
+
+      return () => {
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          setAnnotationImageUrl(null);
+        }
+      };
+    }
+  }, [isAnnotateModalOpen, inspectionImage?.imageUrl, showError]);
 
   if (loading) {
     return (
@@ -781,11 +850,24 @@ function InspectionDetailPage() {
                   <div className='flex items-center space-x-1 text-gray-500'>
                     <span className='text-xs'>Annotation Tools</span>
                     <button
-                      onClick={() => setIsAnnotateModalOpen(true)}
-                      className='p-1 hover:bg-gray-100 rounded'>
-                      <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z' />
-                      </svg>
+                      onClick={() => {
+                        if (inspectionImage?.imageUrl) {
+                          setIsAnnotateModalOpen(true);
+                        } else {
+                          showError("Please upload an inspection image first.");
+                        }
+                      }}
+                      disabled={loadingAnnotationImage}
+                      className='p-1 hover:bg-gray-100 rounded text-gray-500 disabled:opacity-50'
+                      title="Review & Annotate"
+                    >
+                      {loadingAnnotationImage ? (
+                        <div className="w-4 h-4 border-2 border-dashed rounded-full animate-spin border-blue-500"></div>
+                      ) : (
+                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z' />
+                        </svg>
+                      )}
                     </button>
                     <button className='p-1 hover:bg-gray-100 rounded'>
                       <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
@@ -1683,11 +1765,15 @@ function InspectionDetailPage() {
         )}
 
         {/* Annotation Modal */}
-        <AnnotateImageModal
-          isOpen={isAnnotateModalOpen}
-          onClose={() => setIsAnnotateModalOpen(false)}
-          imageUrl={inspectionImage?.imageUrl}
-        />
+        {isAnnotateModalOpen && annotationImageUrl && (
+          <AnnotateImageModal
+            isOpen={isAnnotateModalOpen}
+            onClose={() => setIsAnnotateModalOpen(false)}
+            onSave={handleSaveAnnotations}
+            imageUrl={annotationImageUrl}
+            initialAnnotations={thermalAnalysisResult?.detections || []}
+          />
+        )}
 
         {/* Notification Manager */}
         <NotificationManager

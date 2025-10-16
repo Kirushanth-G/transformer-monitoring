@@ -94,6 +94,7 @@ function InspectionDetailPage() {
     const handleResize = () => {
       if (thermalAnalysisResult) {
         // Force re-render to recalculate overlay positions
+        console.log('ThermalAnalysisResult exists, forcing re-render on window resize', thermalAnalysisResult);
         setThermalAnalysisResult(prev => ({...prev}));
       }
     };
@@ -104,6 +105,7 @@ function InspectionDetailPage() {
 
   const handleAnalysisComplete = (result) => {
     setThermalAnalysisResult(result);
+    console.log('Thermal analysis completed:', result);
     setShowThermalAnalysis(false);
     
     // Force a re-render after a brief delay to ensure image is loaded
@@ -1701,13 +1703,12 @@ function InspectionDetailPage() {
         )}
 
         {/* Annotation Modal */}
-        {isAnnotateModalOpen && inspectionImage?.imageUrl && (
+        {isAnnotateModalOpen && thermalAnalysisResult && (
           <AnnotateImageModal
             isOpen={isAnnotateModalOpen}
             onClose={() => setIsAnnotateModalOpen(false)}
             onSave={handleSaveAnnotations}
-            imageUrl={inspectionImage.imageUrl} // Directly pass the pre-signed URL
-            initialAnnotations={thermalAnalysisResult?.detections || []}
+            thermalAnalysisResult={thermalAnalysisResult} // Pass the full thermalAnalysisResult object
           />
         )}
 

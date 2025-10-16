@@ -88,11 +88,13 @@ export AWS_SECRET_KEY=your_aws_secret_key
 2. **Install dependencies and build:**
    ```bash
    mvn clean install
+   mvn clean install -DskipTests
    ```
 
 3. **Run the backend server:**
    ```bash
    mvn spring-boot:run --spring.profiles.active=local
+   mvn spring-boot:run "-Dspring.profiles.active=local"
    ```
 
 4. **Backend will be available at:** `http://localhost:8080`

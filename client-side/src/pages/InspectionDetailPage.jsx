@@ -12,6 +12,7 @@ import { displayValue, isNullValue } from '../utils/displayHelpers';
 import { thermalApi } from '../services/thermalApi';
 import { getAllTransformers } from '../api/transformerApi';
 import axios from '../api/axiosConfig';
+import AnnotateImageModal from '../components/AnnotateImageModal';
 
 function InspectionDetailPage() {
   const { id } = useParams();
@@ -55,6 +56,9 @@ function InspectionDetailPage() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [environmentalCondition, setEnvironmentalCondition] = useState('Sunny');
   const [uploaderName, setUploaderName] = useState('');
+
+  // Annotation modal state
+  const [isAnnotateModalOpen, setIsAnnotateModalOpen] = useState(false);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -776,7 +780,9 @@ function InspectionDetailPage() {
                   {/* Annotation Tools */}
                   <div className='flex items-center space-x-1 text-gray-500'>
                     <span className='text-xs'>Annotation Tools</span>
-                    <button className='p-1 hover:bg-gray-100 rounded'>
+                    <button
+                      onClick={() => setIsAnnotateModalOpen(true)}
+                      className='p-1 hover:bg-gray-100 rounded'>
                       <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z' />
                       </svg>
@@ -1675,6 +1681,13 @@ function InspectionDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Annotation Modal */}
+        <AnnotateImageModal
+          isOpen={isAnnotateModalOpen}
+          onClose={() => setIsAnnotateModalOpen(false)}
+          imageUrl={inspectionImage?.imageUrl}
+        />
 
         {/* Notification Manager */}
         <NotificationManager

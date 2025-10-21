@@ -14,11 +14,17 @@ from thermal_detector.utils.image_utils import get_local_image_path
 
 
 # Initialize FastAPI app
+
 app = FastAPI(
     title="Thermal Anomaly Detection API",
     description="AI-powered thermal image analysis for electrical equipment monitoring",
     version="1.0.0"
 )
+
+# Root endpoint
+@app.get("/")
+def root():
+    return {"status": "ok"}
 
 # Global variables for model and detector (loaded once at startup)
 _detector: Optional[ThermalAnomalyDetector] = None

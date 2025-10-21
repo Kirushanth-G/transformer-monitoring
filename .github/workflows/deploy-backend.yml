@@ -1,154 +1,154 @@
-name: CI/CD for Spring Boot App
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'server-transformer/**'  
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: server-transformer
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: maven
-
-      - name: Build with Maven
-        run: |
-          mvn clean package -DskipTests
-          ls -la target/
-
-      - name: Run Tests
-        run: mvn test
-        env:
-          PSQL_USER: ${{ secrets.PSQL_USER }}
-          PSQL_PASSWORD: ${{ secrets.PSQL_PASSWORD }}
-
-      - name: Check for JAR file
-        run: |
-          JAR_FILE=$(find target -name "*.jar" -not -name "*sources.jar" -not -name "*javadoc.jar" | head -1)
-          if [ -z "$JAR_FILE" ]; then
-            echo "Error: No executable JAR found in target directory."
-            ls -la target/
-            exit 1
-          fi
-          echo "Found JAR: $JAR_FILE"
-          echo "JAR_FILE=$(basename $JAR_FILE)" >> $GITHUB_ENV
-
-      - name: Archive production artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: packaged-application
-          path: server-transformer/target/*.jar
-  
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: packaged-application
-          path: ./
-
-      - name: Copy JAR to EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ec2-user
-          key: ${{ secrets.DEPLOY_KEY }}
-          source: "*.jar"
-          target: "/home/ec2-user/deployment/"
-
-      - name: Deploy and Update Application
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ec2-user
-          key: ${{ secrets.DEPLOY_KEY }}
-          script: |
-            cd /home/ec2-user/deployment
-            
-            # Create environment file with your PostgreSQL credentials
-            cat > application.env << EOF
-            PSQL_USER=${{ secrets.PSQL_USER }}
-            PSQL_PASSWORD=${{ secrets.PSQL_PASSWORD }}
-            SPRING_PROFILES_ACTIVE=production
-            EOF
-            
-            # Set proper permissions for env file
-            chmod 600 application.env
-            
-            # Stop existing service
-            sudo systemctl stop spring-boot-app || true
-            
-            # List current files for debugging
-            echo "Files in deployment directory:"
-            ls -la
-            
-            # Create target directory if it doesn't exist
-            mkdir -p target
-            
-            # Find the new JAR file and move it to the target directory
-            NEW_JAR=$(find . -maxdepth 1 -name "*.jar" -not -name "*backup*" | head -1)
-            if [ -z "$NEW_JAR" ]; then
-              echo "Error: No new JAR file found!"
-              ls -la
-              exit 1
-            fi
-            
-            echo "Found new JAR file: $NEW_JAR"
-            
-            # Backup existing JAR in target directory if it exists
-            if [ -f target/server-transformer-3.5.4.jar ]; then
-              mv target/server-transformer-3.5.4.jar target/server-transformer-backup-$(date +%Y%m%d-%H%M%S).jar
-            fi
-            
-            # Move the new JAR to the expected location for your systemd service
-            mv "$NEW_JAR" target/server-transformer-3.5.4.jar
-            
-            # Ensure JAR is executable
-            chmod +x target/server-transformer-3.5.4.jar
-            
-            # Verify the JAR file exists at the expected location
-            if [ ! -f target/server-transformer-3.5.4.jar ]; then
-              echo "Error: JAR was not moved to target directory successfully!"
-              ls -la target/
-              exit 1
-            fi
-            
-            echo "JAR file ready at expected location:"
-            ls -la target/server-transformer-3.5.4.jar
-            
-            # Reload systemd (in case service file changed) and start service
-            sudo systemctl daemon-reload
-            sudo systemctl start spring-boot-app
-            sudo systemctl enable spring-boot-app
-            
-            # Wait and check if service started successfully
-            sleep 15
-            if sudo systemctl is-active --quiet spring-boot-app; then
-              echo "✅ Spring Boot application deployed successfully"
-              echo "Application status:"
-              sudo systemctl status spring-boot-app --no-pager -l
-            else
-              echo "❌ Failed to start Spring Boot application"
-              echo "Service logs:"
-              sudo journalctl -u spring-boot-app --no-pager -n 30
-              exit 1
-            fi
+# name: CI/CD for Spring Boot App
+#
+# on:
+#   push:
+#     branches:
+#       - main
+#     paths:
+#       - 'server-transformer/**'
+#   workflow_dispatch:
+#
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     defaults:
+#       run:
+#         working-directory: server-transformer
+#
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+#
+#       - name: Set up JDK
+#         uses: actions/setup-java@v4
+#         with:
+#           distribution: 'temurin'
+#           java-version: '21'
+#           cache: maven
+#
+#       - name: Build with Maven
+#         run: |
+#           mvn clean package -DskipTests
+#           ls -la target/
+#
+#       - name: Run Tests
+#         run: mvn test
+#         env:
+#           PSQL_USER: ${{ secrets.PSQL_USER }}
+#           PSQL_PASSWORD: ${{ secrets.PSQL_PASSWORD }}
+#
+#       - name: Check for JAR file
+#         run: |
+#           JAR_FILE=$(find target -name "*.jar" -not -name "*sources.jar" -not -name "*javadoc.jar" | head -1)
+#           if [ -z "$JAR_FILE" ]; then
+#             echo "Error: No executable JAR found in target directory."
+#             ls -la target/
+#             exit 1
+#           fi
+#           echo "Found JAR: $JAR_FILE"
+#           echo "JAR_FILE=$(basename $JAR_FILE)" >> $GITHUB_ENV
+#
+#       - name: Archive production artifacts
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: packaged-application
+#           path: server-transformer/target/*.jar
+#
+#   deploy:
+#     needs: build
+#     runs-on: ubuntu-latest
+#     if: github.ref == 'refs/heads/main'
+#
+#     steps:
+#       - name: Download artifacts
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: packaged-application
+#           path: ./
+#
+#       - name: Copy JAR to EC2
+#         uses: appleboy/scp-action@master
+#         with:
+#           host: ${{ secrets.DEPLOY_HOST }}
+#           username: ec2-user
+#           key: ${{ secrets.DEPLOY_KEY }}
+#           source: "*.jar"
+#           target: "/home/ec2-user/deployment/"
+#
+#       - name: Deploy and Update Application
+#         uses: appleboy/ssh-action@v1.0.3
+#         with:
+#           host: ${{ secrets.DEPLOY_HOST }}
+#           username: ec2-user
+#           key: ${{ secrets.DEPLOY_KEY }}
+#           script: |
+#             cd /home/ec2-user/deployment
+#
+#             # Create environment file with your PostgreSQL credentials
+#             cat > application.env << EOF
+#             PSQL_USER=${{ secrets.PSQL_USER }}
+#             PSQL_PASSWORD=${{ secrets.PSQL_PASSWORD }}
+#             SPRING_PROFILES_ACTIVE=production
+#             EOF
+#
+#             # Set proper permissions for env file
+#             chmod 600 application.env
+#
+#             # Stop existing service
+#             sudo systemctl stop spring-boot-app || true
+#
+#             # List current files for debugging
+#             echo "Files in deployment directory:"
+#             ls -la
+#
+#             # Create target directory if it doesn't exist
+#             mkdir -p target
+#
+#             # Find the new JAR file and move it to the target directory
+#             NEW_JAR=$(find . -maxdepth 1 -name "*.jar" -not -name "*backup*" | head -1)
+#             if [ -z "$NEW_JAR" ]; then
+#               echo "Error: No new JAR file found!"
+#               ls -la
+#               exit 1
+#             fi
+#
+#             echo "Found new JAR file: $NEW_JAR"
+#
+#             # Backup existing JAR in target directory if it exists
+#             if [ -f target/server-transformer-3.5.4.jar ]; then
+#               mv target/server-transformer-3.5.4.jar target/server-transformer-backup-$(date +%Y%m%d-%H%M%S).jar
+#             fi
+#
+#             # Move the new JAR to the expected location for your systemd service
+#             mv "$NEW_JAR" target/server-transformer-3.5.4.jar
+#
+#             # Ensure JAR is executable
+#             chmod +x target/server-transformer-3.5.4.jar
+#
+#             # Verify the JAR file exists at the expected location
+#             if [ ! -f target/server-transformer-3.5.4.jar ]; then
+#               echo "Error: JAR was not moved to target directory successfully!"
+#               ls -la target/
+#               exit 1
+#             fi
+#
+#             echo "JAR file ready at expected location:"
+#             ls -la target/server-transformer-3.5.4.jar
+#
+#             # Reload systemd (in case service file changed) and start service
+#             sudo systemctl daemon-reload
+#             sudo systemctl start spring-boot-app
+#             sudo systemctl enable spring-boot-app
+#
+#             # Wait and check if service started successfully
+#             sleep 15
+#             if sudo systemctl is-active --quiet spring-boot-app; then
+#               echo "✅ Spring Boot application deployed successfully"
+#               echo "Application status:"
+#               sudo systemctl status spring-boot-app --no-pager -l
+#             else
+#               echo "❌ Failed to start Spring Boot application"
+#               echo "Service logs:"
+#               sudo journalctl -u spring-boot-app --no-pager -n 30
+#               exit 1
+#             fi

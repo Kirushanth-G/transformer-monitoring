@@ -1,27 +1,35 @@
 package com.kirus.server_transformer.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
 
 @Service
 public class S3Service {
 
-    @Autowired
-    private S3Client s3Client;
+    @Value("${supabase.storage.url}")
+    private String storageUrl;
 
     // Use Supabase S3 properties (public bucket)
     @Value("${supabase.s3.bucket}")
     private String bucketName;
 
-    @Value("${supabase.s3.endpoint}")
-    private String endpoint; // e.g. https://<project>.supabase.co/storage/v1/object
+    @Value("${supabase.service.key}")
+    private String serviceKey;
+
+    private final RestClient restClient;
+
+    public S3Service() {
+        this.restClient = RestClient.create();
+    }
 
     public String uploadFile(MultipartFile file) {
         try {
@@ -29,21 +37,19 @@ public class S3Service {
             String safeName = (original == null || original.isBlank()) ? "file" : original.replaceAll("[^a-zA-Z0-9._-]", "_");
             String fileName = System.currentTimeMillis() + "_" + safeName;
 
-            // Upload file to S3
-            s3Client.putObject(PutObjectRequest.builder()
-                            .bucket(bucketName)
-                            .key(fileName)
-                            .build(),
-                    RequestBody.fromBytes(file.getBytes()));
+            String uploadUrl = storageUrl + "/object/" + bucketName + "/" + fileName;
 
-            // Construct Supabase public object URL in the form:
-            // {endpoint}/public/{bucket}/{fileName}
-            // If endpoint already contains 'public', don't duplicate it.
-            String base = endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
-            String publicSegment = base.contains("/public/") || base.endsWith("/public") ? "" : "/public";
-            return base + publicSegment + "/" + bucketName + "/" + fileName;
+            restClient.post()
+                    .uri(uploadUrl)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceKey)
+                    .contentType(MediaType.parseMediaType(file.getContentType()))
+                    .body(file.getBytes())
+                    .retrieve()
+                    .toBodilessEntity();
+
+            return storageUrl + "/object/public/" + bucketName + "/" + fileName;
         } catch (IOException e) {
-            throw new RuntimeException("Failed to upload file to S3", e);
+            throw new RuntimeException("Failed to upload file", e);
         }
     }
 
@@ -58,54 +64,31 @@ public class S3Service {
             return trimmed;
         }
 
-        // If key contains folders, keep them; Supabase public URL requires the object path after the bucket
-        String base = endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
-        String publicSegment = base.contains("/public/") || base.endsWith("/public") ? "" : "/public";
-        return base + publicSegment + "/" + bucketName + "/" + trimmed;
+        return storageUrl + "/object/public/" + bucketName + "/" + trimmed;
     }
 
     public void deleteFile(String keyOrUrl) {
         String objectKey = extractObjectKey(keyOrUrl);
+        String deleteUrl = storageUrl + "/object/" + bucketName + "/" + objectKey;
 
-        final String finalKey = objectKey; // Make it final for lambda
-
-        s3Client.deleteObject(builder -> builder
-                .bucket(bucketName)
-                .key(finalKey)
-                .build());
-    }
-
-    public boolean doesObjectExist(String keyOrUrl) {
-        try {
-            String objectKey = extractObjectKey(keyOrUrl);
-            final String finalKey = objectKey; // Make it final for lambda
-
-            s3Client.headObject(builder -> builder
-                    .bucket(bucketName)
-                    .key(finalKey)
-                    .build());
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        restClient.delete()
+                .uri(deleteUrl)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceKey)
+                .retrieve()
+                .toBodilessEntity();
     }
 
     // Helper to extract the object key from a Supabase public URL or return the provided key unchanged
     private String extractObjectKey(String keyOrUrl) {
         if (keyOrUrl == null) return "";
         String trimmed = keyOrUrl.trim();
+
         if (trimmed.startsWith("http")) {
-            // Try to find '/public/{bucket}/' segment and return the substring after it
-            String marker = "/public/" + bucketName + "/";
+            // Try to find '/object/public/{bucket}/' segment and return the substring after it
+            String marker = "/object/public/" + bucketName + "/";
             int idx = trimmed.indexOf(marker);
             if (idx != -1) {
                 return trimmed.substring(idx + marker.length());
-            }
-
-            // If endpoint was configured with /public already or different form, attempt to find the bucket name
-            idx = trimmed.indexOf("/" + bucketName + "/");
-            if (idx != -1) {
-                return trimmed.substring(idx + ("/" + bucketName + "/").length());
             }
 
             // Fallback: return last path segment

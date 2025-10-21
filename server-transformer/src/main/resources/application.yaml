@@ -20,11 +20,11 @@ spring:
     baseline-on-migrate: true
 
 supabase:
+  storage:
+    url: https://tpzemlslqgawxqsbvpqz.supabase.co/storage/v1
+  service:
+    key: ${SUPABASE_SERVICE_KEY}
   s3:
-    endpoint: https://tpzemlslqgawxqsbvpqz.storage.supabase.co/storage/v1/s3
-    region: us-east-1
-    access-key: ${SUPABASE_ACCESS_KEY}
-    secret-key: ${SUPABASE_SECRET_KEY}
     bucket: image-bucket
 
 

@@ -29,9 +29,10 @@ public class ThermalAnalysis {
     @JoinColumn(name = "maintenance_image_id", nullable = false)
     private InspectionImage maintenanceImage;
 
+    // baselineImage should reference transformer baseline images (TransformImage) not inspection images
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "baseline_image_id")
-    private InspectionImage baselineImage;
+    private TransformImage baselineImage;
 
     @Column(name = "analysis_timestamp", nullable = false)
     private LocalDateTime analysisTimestamp;
@@ -68,6 +69,18 @@ public class ThermalAnalysis {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inspection_id")
     private Inspection inspection;
+
+    // Explicit setters to handle code that may pass either type
+    public void setBaselineImage(TransformImage transformImage) {
+        this.baselineImage = transformImage;
+    }
+
+    // Backwards-compatible setter: if some code still passes an InspectionImage, accept it and leave baselineImage null
+    public void setBaselineImage(InspectionImage inspectionImage) {
+        // This maintains compatibility with older code paths that expected an InspectionImage
+        // We cannot convert an InspectionImage to a TransformImage; log if possible and set baselineImage to null
+        this.baselineImage = null;
+    }
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

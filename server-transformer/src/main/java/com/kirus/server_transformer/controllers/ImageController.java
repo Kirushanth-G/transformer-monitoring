@@ -69,18 +69,19 @@ public class ImageController {
                 );
             }
 
-            String s3Key = s3Service.uploadFile(file); // This returns just the key now
+            // uploadFile now returns the full public URL for Supabase
+            String publicUrl = s3Service.uploadFile(file);
             TransformImage image = new TransformImage();
             image.setTransformer(transformerOpt.get());
-            image.setImageUrl(s3Key); // Store the S3 key
+            image.setImageUrl(publicUrl); // Store the full public URL
             image.setUploaderName(uploaderName != null ? uploaderName : "Unknown");
             image.setUploadTime(LocalDateTime.now());
 
             TransformImage savedImage = transformerImageRepository.save(image);
             TransformerImageDTO dto = transformerImageMapper.toDTO(savedImage);
 
-            // Generate pre-signed URL for the response
-            dto.setImageUrl(s3Service.generatePresignedUrl(savedImage.getImageUrl()));
+            // Return stored public URL directly (no presigned URL needed for public bucket)
+            dto.setImageUrl(savedImage.getImageUrl());
 
             return ResponseEntity.ok().body(dto);
         } catch (Exception e) {
@@ -111,10 +112,11 @@ public class ImageController {
                 );
             }
 
-            String s3Key = s3Service.uploadFile(file); // This returns just the key now
+            // uploadFile now returns the full public URL for Supabase
+            String publicUrl = s3Service.uploadFile(file);
             InspectionImage image = new InspectionImage();
             image.setInspection(inspectionOpt.get());
-            image.setImageUrl(s3Key); // Store the S3 key
+            image.setImageUrl(publicUrl); // Store the full public URL
             image.setEnvironmentalCondition(environmentalCondition);
             image.setUploaderName(uploaderName != null ? uploaderName : "Unknown");
             image.setUploadTime(LocalDateTime.now());
@@ -122,8 +124,8 @@ public class ImageController {
             InspectionImage savedImage = inspectionImageRepository.save(image);
             InspectionImageDTO dto = inspectionImageMapper.toDTO(savedImage);
 
-            // Generate pre-signed URL for the response
-            dto.setImageUrl(s3Service.generatePresignedUrl(savedImage.getImageUrl()));
+            // Return stored public URL directly (no presigned URL needed for public bucket)
+            dto.setImageUrl(savedImage.getImageUrl());
 
             return ResponseEntity.ok().body(dto);
         } catch (Exception e) {
@@ -145,8 +147,8 @@ public class ImageController {
         }
 
         TransformerImageDTO dto = transformerImageMapper.toDTO(images.get(0));
-        // Generate pre-signed URL for frontend access
-        dto.setImageUrl(s3Service.generatePresignedUrl(images.get(0).getImageUrl()));
+        // Return stored public URL directly
+        dto.setImageUrl(images.get(0).getImageUrl());
         return ResponseEntity.ok(dto);
     }
 
@@ -164,8 +166,8 @@ public class ImageController {
         }
 
         InspectionImageDTO dto = inspectionImageMapper.toDTO(images.get(0));
-        // Generate pre-signed URL for frontend access
-        dto.setImageUrl(s3Service.generatePresignedUrl(images.get(0).getImageUrl()));
+        // Return stored public URL directly
+        dto.setImageUrl(images.get(0).getImageUrl());
         return ResponseEntity.ok(dto);
     }
 
@@ -182,7 +184,7 @@ public class ImageController {
             return ResponseEntity.badRequest().body("No image found to delete");
         }
 
-        // Delete from S3 first
+        // Delete from S3 first (deleteFile accepts full URL or key)
         try {
             s3Service.deleteFile(images.get(0).getImageUrl());
         } catch (Exception e) {
@@ -207,7 +209,7 @@ public class ImageController {
             return ResponseEntity.badRequest().body("No image found to delete");
         }
 
-        // Delete from S3 first
+        // Delete from S3 first (deleteFile accepts full URL or key)
         try {
             s3Service.deleteFile(images.get(0).getImageUrl());
         } catch (Exception e) {

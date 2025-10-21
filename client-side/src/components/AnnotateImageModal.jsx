@@ -12,8 +12,19 @@ import { v4 as uuidv4 } from 'uuid';
  * @param {function} onSave - Function to call when saving annotations. It receives an object
  * with all the annotation changes ({ added, edited, deleted }).
  * @param {object} thermalAnalysisResult - The full analysis result object which contains the image URL and initial detections.
+ * @param {string} currentUserId - ID of the current user for metadata tracking.
+ * @param {string} transformerId - ID of the transformer being analyzed.
+ * @param {string} imageId - Unique identifier for the image being annotated.
  */
-function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) {
+function AnnotateImageModal({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  thermalAnalysisResult, 
+  currentUserId = 'unknown-user',
+  transformerId,
+  imageId 
+}) {
   // Destructure props safely, providing default empty values
   const { maintenanceImageUrl: imageUrl, detections: initialAnnotations = [] } = thermalAnalysisResult || {};
 
@@ -26,6 +37,47 @@ function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) 
   const [interaction, setInteraction] = useState({ type: 'none' });
   const [startPoint, setStartPoint] = useState({ x: 0, y: 0 });
   const [currentDrawingBox, setCurrentDrawingBox] = useState(null);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [currentComment, setCurrentComment] = useState('');
+  const [pendingAnnotation, setPendingAnnotation] = useState(null);
+  const [annotationHistory, setAnnotationHistory] = useState([]);
+
+  // Helper function to create annotation metadata
+  const createAnnotationMetadata = (action, annotationData, comment = '') => ({
+    id: uuidv4(),
+    userId: currentUserId,
+    timestamp: new Date().toISOString(),
+    imageId,
+    transformerId,
+    action, // 'added', 'edited', 'deleted'
+    comment,
+    ...annotationData
+  });
+
+  // Log annotation action for feedback integration (FR3.3)
+  const logAnnotationAction = (action, annotationData, comment = '') => {
+    const logEntry = createAnnotationMetadata(action, annotationData, comment);
+    setAnnotationHistory(prev => [...prev, logEntry]);
+    
+    // Auto-save to backend (FR3.2 requirement)
+    if (typeof onSave === 'function') {
+      // This will be called immediately for each action, not just on modal close
+      const currentFeedback = {
+        added: boxes.filter(b => b.status === 'user-added'),
+        edited: boxes.filter(b => b.status === 'user-edited'),
+        deleted: boxes.filter(b => b.status === 'deleted'),
+        history: [...annotationHistory, logEntry],
+        metadata: {
+          userId: currentUserId,
+          timestamp: new Date().toISOString(),
+          imageId,
+          transformerId
+        }
+      };
+      // You might want to debounce this or make it async
+      // onSave(currentFeedback);
+    }
+  };
 
   const getCanvasCoords = (e) => {
     const canvas = annotationCanvasRef.current;
@@ -131,8 +183,10 @@ function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) 
 
             const formattedBoxes = initialAnnotations.map(anno => ({
                 ...anno,
-                id: uuidv4(),
+                id: anno.id || uuidv4(),
                 status: 'ai-detected',
+                originalDetection: true,
+                metadata: createAnnotationMetadata('ai-detected', anno)
             }));
             setBoxes(formattedBoxes);
         };
@@ -179,9 +233,17 @@ function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) 
     const interactionResult = getInteractionType(x, y);
 
     if (interactionResult.type === 'delete') {
+      const boxToDelete = boxes.find(box => box.id === selectedBoxId);
       setBoxes(boxes.map(box => {
         if (box.id === selectedBoxId) {
-          return box.status === 'ai-detected' || box.status === 'user-edited' ? { ...box, status: 'deleted' } : null;
+          const updatedBox = box.status === 'ai-detected' || box.status === 'user-edited' 
+            ? { ...box, status: 'deleted', metadata: createAnnotationMetadata('deleted', box) } 
+            : null;
+          
+          if (updatedBox) {
+            logAnnotationAction('deleted', boxToDelete);
+          }
+          return updatedBox;
         }
         return box;
       }).filter(Boolean));
@@ -219,16 +281,18 @@ function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) 
       case 'moving':
         setBoxes(boxes.map(box => {
           if (box.id === interaction.boxId) {
-            return {
+            const updatedBox = {
               ...box,
               x: box.x + dx,
               y: box.y + dy,
               status: box.status === 'ai-detected' ? 'user-edited' : box.status,
+              metadata: box.status === 'ai-detected' ? createAnnotationMetadata('edited', box) : box.metadata
             };
+            return updatedBox;
           }
           return box;
         }));
-        setStartPoint({ x, y }); // Update start point for smooth dragging
+        setStartPoint({ x, y });
         break;
       case 'resizing':
         setBoxes(boxes.map(box => {
@@ -239,11 +303,15 @@ function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) 
             if (handle.includes('Right')) { newBox.width += dx; }
             if (handle.includes('Top')) { newBox.y += dy; newBox.height -= dy; }
             if (handle.includes('Bottom')) { newBox.height += dy; }
-            return { ...newBox, status: newBox.status === 'ai-detected' ? 'user-edited' : newBox.status };
+            return { 
+              ...newBox, 
+              status: newBox.status === 'ai-detected' ? 'user-edited' : newBox.status,
+              metadata: newBox.status === 'ai-detected' ? createAnnotationMetadata('edited', newBox) : newBox.metadata
+            };
           }
           return box;
         }));
-        setStartPoint({ x, y }); // Update start point for smooth resizing
+        setStartPoint({ x, y });
         break;
       default: break;
     }
@@ -259,11 +327,21 @@ function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) 
         height: Math.abs(currentDrawingBox.height),
       };
       if (newBox.width > 5 && newBox.height > 5) {
-        const finalBox = { ...newBox, id: uuidv4(), status: 'user-added' };
-        setBoxes([...boxes, finalBox]);
-        setSelectedBoxId(finalBox.id);
+        const finalBox = { 
+          ...newBox, 
+          id: uuidv4(), 
+          status: 'user-added',
+          metadata: createAnnotationMetadata('added', newBox)
+        };
+        setPendingAnnotation(finalBox);
+        setShowCommentModal(true);
       }
     } else if (interaction.type === 'resizing') {
+        const editedBox = boxes.find(box => box.id === selectedBoxId);
+        if (editedBox && editedBox.status === 'user-edited') {
+          logAnnotationAction('edited', editedBox);
+        }
+        
         // Normalize box dimensions if resized in a negative direction
         setBoxes(boxes.map(box => {
             if (box.id === selectedBoxId) {
@@ -280,10 +358,40 @@ function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) 
             }
             return box;
         }));
+    } else if (interaction.type === 'moving') {
+        const editedBox = boxes.find(box => box.id === interaction.boxId);
+        if (editedBox && editedBox.status === 'user-edited') {
+          logAnnotationAction('edited', editedBox);
+        }
     }
 
     setInteraction({ type: 'none' });
     setCurrentDrawingBox(null);
+  };
+
+  const handleCommentSubmit = () => {
+    if (pendingAnnotation) {
+      const finalBox = {
+        ...pendingAnnotation,
+        comment: currentComment,
+        metadata: {
+          ...pendingAnnotation.metadata,
+          comment: currentComment
+        }
+      };
+      setBoxes([...boxes, finalBox]);
+      setSelectedBoxId(finalBox.id);
+      logAnnotationAction('added', finalBox, currentComment);
+    }
+    setShowCommentModal(false);
+    setCurrentComment('');
+    setPendingAnnotation(null);
+  };
+
+  const handleCommentCancel = () => {
+    setShowCommentModal(false);
+    setCurrentComment('');
+    setPendingAnnotation(null);
   };
   
   const handleClear = () => {
@@ -291,9 +399,12 @@ function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) 
       ...anno,
       id: uuidv4(),
       status: 'ai-detected',
+      originalDetection: true,
+      metadata: createAnnotationMetadata('ai-detected', anno)
     }));
     setBoxes(formattedBoxes);
     setSelectedBoxId(null);
+    logAnnotationAction('reset', { message: 'Reset to AI detections' });
   };
 
   const handleSave = () => {
@@ -301,10 +412,22 @@ function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) 
       added: boxes.filter(b => b.status === 'user-added'),
       edited: boxes.filter(b => b.status === 'user-edited'),
       deleted: boxes.filter(b => b.status === 'deleted'),
+      originalDetections: initialAnnotations,
+      history: annotationHistory,
+      metadata: {
+        userId: currentUserId,
+        timestamp: new Date().toISOString(),
+        imageId,
+        transformerId,
+        totalAnnotations: boxes.length,
+        userModifications: boxes.filter(b => b.status !== 'ai-detected').length
+      }
     };
     onSave(feedback);
     onClose();
   };
+
+  const selectedBox = boxes.find(b => b.id === selectedBoxId);
 
   if (!isOpen) return null;
 
@@ -326,7 +449,29 @@ function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) 
           <button onClick={handleClear} className="px-4 py-1 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 text-sm font-medium">Reset to AI Detections</button>
         </div>
 
-        <div className="overflow-auto flex-grow flex items-center justify-center bg-gray-100 rounded-md" style={{ height: 'calc(85vh - 120px)' }}>
+        {/* Annotation Details Panel */}
+        {selectedBox && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-md border-l-4 border-blue-400">
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="font-medium text-blue-900">Selected Annotation</h4>
+                <p className="text-sm text-blue-700">Status: {selectedBox.status.replace('-', ' ').toUpperCase()}</p>
+                <p className="text-sm text-blue-700">
+                  Position: ({Math.round(selectedBox.x)}, {Math.round(selectedBox.y)}) 
+                  Size: {Math.round(selectedBox.width)} × {Math.round(selectedBox.height)}
+                </p>
+                {selectedBox.comment && (
+                  <p className="text-sm text-blue-700 mt-1">Comment: "{selectedBox.comment}"</p>
+                )}
+              </div>
+              <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                {selectedBox.metadata?.timestamp ? new Date(selectedBox.metadata.timestamp).toLocaleTimeString() : 'N/A'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="overflow-auto flex-grow flex items-center justify-center bg-gray-100 rounded-md" style={{ height: 'calc(85vh - 180px)' }}>
           <div className="relative" style={{ width: 'fit-content' }}>
             <canvas ref={imageCanvasRef} className="block rounded-md shadow-md" />
             <canvas
@@ -340,11 +485,46 @@ function AnnotateImageModal({ isOpen, onClose, onSave, thermalAnalysisResult }) 
           </div>
         </div>
 
-        <div className="mt-4 pt-3 border-t flex justify-end space-x-3">
-          <button onClick={onClose} className="px-5 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-semibold">Cancel</button>
-          <button onClick={handleSave} className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Save Annotations</button>
+        <div className="mt-4 pt-3 border-t flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            User: {currentUserId} | Modifications: {boxes.filter(b => b.status !== 'ai-detected').length} | 
+            Total Annotations: {boxes.filter(b => b.status !== 'deleted').length}
+          </div>
+          <div className="flex space-x-3">
+            <button onClick={onClose} className="px-5 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-semibold">Cancel</button>
+            <button onClick={handleSave} className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Save Annotations</button>
+          </div>
         </div>
       </div>
+
+      {/* Comment Modal */}
+      {showCommentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-60 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
+            <h3 className="text-lg font-semibold mb-4">Add Comment (Optional)</h3>
+            <textarea
+              value={currentComment}
+              onChange={(e) => setCurrentComment(e.target.value)}
+              placeholder="Describe this annotation..."
+              className="w-full h-24 p-3 border rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <div className="flex justify-end space-x-3 mt-4">
+              <button 
+                onClick={handleCommentCancel}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Skip
+              </button>
+              <button 
+                onClick={handleCommentSubmit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Add Annotation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

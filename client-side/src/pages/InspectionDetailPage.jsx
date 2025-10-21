@@ -59,6 +59,10 @@ function InspectionDetailPage() {
   // Annotation states
   const [isAnnotateModalOpen, setIsAnnotateModalOpen] = useState(false);
 
+  // Image modal states
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [modalImageData, setModalImageData] = useState(null);
+
   // Check if mobile on mount and resize
   useEffect(() => {
     const checkMobile = () => {
@@ -408,6 +412,17 @@ function InspectionDetailPage() {
       }
       setSelectedFile(file);
     }
+  };
+
+  // Opens an image in a wider modal view
+  const openImageModal = (imageData) => {
+    setModalImageData(imageData);
+    setIsImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setIsImageModalOpen(false);
+    setModalImageData(null);
   };
 
   // Fetch transformer details when inspection is loaded
@@ -843,7 +858,19 @@ function InspectionDetailPage() {
                         <img 
                           src={transformerBaselineImage.imageUrl} 
                           alt="Transformer Baseline"
-                          className='w-full h-full object-contain'
+                          className='w-full h-full object-contain cursor-pointer hover:opacity-90 transition-opacity'
+                          onClick={() => openImageModal({
+                            url: transformerBaselineImage.imageUrl,
+                            title: 'Transformer Baseline Image',
+                            subtitle: `Transformer ${transformerBaselineImage.transformerId} (ID: ${transformerBaselineImage.id})`,
+                            metadata: {
+                              'Image ID': transformerBaselineImage.id,
+                              'Transformer ID': transformerBaselineImage.transformerId,
+                              'Uploader': transformerBaselineImage.uploaderName || 'Unknown',
+                              'Upload Time': transformerBaselineImage.uploadTime ? new Date(transformerBaselineImage.uploadTime).toLocaleString() : 'N/A',
+                              'Type': 'Baseline Reference'
+                            }
+                          })}
                           onError={(e) => {
                             console.error('Baseline image failed to load:', transformerBaselineImage.imageUrl);
                             e.target.style.display = 'none';
@@ -856,6 +883,9 @@ function InspectionDetailPage() {
                         <div className='hidden text-gray-500'>Baseline image failed to load</div>
                         <div className='absolute bottom-2 left-2 text-white text-xs bg-black bg-opacity-75 px-2 py-1 rounded'>
                           {transformerBaselineImage.uploadTime ? new Date(transformerBaselineImage.uploadTime).toLocaleString() : 'N/A'}
+                        </div>
+                        <div className='absolute top-2 right-2 text-white text-xs bg-black bg-opacity-75 px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity'>
+                          Click to expand
                         </div>
                       </>
                     ) : (
@@ -872,6 +902,7 @@ function InspectionDetailPage() {
                     )}
                   </div>
                   
+                  {/* Baseline Image Metadata */}
                   {transformerBaselineImage && (
                     <div className='p-2 bg-white border-t'>
                       <div className='flex justify-between items-center mb-2'>
@@ -923,7 +954,24 @@ function InspectionDetailPage() {
                         <img 
                           src={thermalAnalysisResult.maintenanceImageUrl || inspectionImage.imageUrl} 
                           alt="Thermal Analysis"
-                          className='w-full h-full object-contain'
+                          className='w-full h-full object-contain cursor-pointer hover:opacity-90 transition-opacity'
+                          onClick={() => openImageModal({
+                            url: thermalAnalysisResult.maintenanceImageUrl || inspectionImage.imageUrl,
+                            title: 'Thermal Analysis Result',
+                            subtitle: `Analysis #${thermalAnalysisResult.id} - ${thermalAnalysisResult.overallAssessment}`,
+                            metadata: {
+                              'Analysis ID': thermalAnalysisResult.id,
+                              'Image ID': inspectionImage.id,
+                              'Assessment': thermalAnalysisResult.overallAssessment,
+                              'Anomaly Score': thermalAnalysisResult.anomalyScore?.toFixed(3) || '0.000',
+                              'Total Detections': thermalAnalysisResult.totalDetections || 0,
+                              'Critical Detections': thermalAnalysisResult.detections?.filter(d => d.isCritical).length || 0,
+                              'Analysis Time': thermalAnalysisResult.analysisTimestamp ? new Date(thermalAnalysisResult.analysisTimestamp).toLocaleString() : 'N/A',
+                              'Processing Time': `${thermalAnalysisResult.processingTimeMs || 0}ms`,
+                              'Created By': thermalAnalysisResult.createdBy || 'Unknown'
+                            },
+                            detections: thermalAnalysisResult.detections
+                          })}
                           onError={(e) => {
                             // Fallback to original image if thermal image fails
                             e.target.src = inspectionImage.imageUrl;
@@ -1031,13 +1079,30 @@ function InspectionDetailPage() {
                             new Date().toLocaleString()
                           }
                         </div>
+
+                        <div className='absolute top-2 left-2 text-white text-xs bg-black bg-opacity-75 px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity'>
+                          Click to expand
+                        </div>
                       </div>
                     ) : inspectionImage && !thermalAnalysisResult ? (
                       <div className='relative w-full h-full'>
                         <img 
                           src={inspectionImage.imageUrl} 
                           alt="Uploaded Inspection Image"
-                          className='w-full h-full object-contain'
+                          className='w-full h-full object-contain cursor-pointer hover:opacity-90 transition-opacity'
+                          onClick={() => openImageModal({
+                            url: inspectionImage.imageUrl,
+                            title: 'Inspection Image',
+                            subtitle: `Image #${inspectionImage.id} - Ready for Analysis`,
+                            metadata: {
+                              'Image ID': inspectionImage.id,
+                              'Inspection ID': inspectionImage.inspectionId,
+                              'Environmental Condition': inspectionImage.environmentalCondition || 'N/A',
+                              'Uploader': inspectionImage.uploaderName || 'Unknown',
+                              'Upload Time': inspectionImage.uploadTime ? new Date(inspectionImage.uploadTime).toLocaleString() : 'N/A',
+                              'Status': 'Ready for Analysis'
+                            }
+                          })}
                         />
                         <div className='absolute inset-0 flex items-center justify-center bg-black bg-opacity-20'>
                           <div className='text-center text-white bg-black bg-opacity-60 px-4 py-2 rounded'>
@@ -1061,6 +1126,9 @@ function InspectionDetailPage() {
                           {inspectionImage.uploaderName && (
                             <div>By: {inspectionImage.uploaderName}</div>
                           )}
+                        </div>
+                        <div className='absolute top-2 right-2 text-white text-xs bg-black bg-opacity-75 px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity'>
+                          Click to expand
                         </div>
                       </div>
                     ) : (
@@ -1710,6 +1778,159 @@ function InspectionDetailPage() {
             onSave={handleSaveAnnotations}
             thermalAnalysisResult={thermalAnalysisResult} // Pass the full thermalAnalysisResult object
           />
+        )}
+
+        {/* Image Modal */}
+        {isImageModalOpen && modalImageData && (
+          <div className='fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4'>
+            <div className='bg-white rounded-lg max-w-6xl max-h-[90vh] w-full flex flex-col'>
+              {/* Modal Header */}
+              <div className='flex justify-between items-center p-4 border-b border-gray-200'>
+                <div>
+                  <h3 className='text-lg font-semibold text-gray-800'>{modalImageData.title}</h3>
+                  {modalImageData.subtitle && (
+                    <p className='text-sm text-gray-600 mt-1'>{modalImageData.subtitle}</p>
+                  )}
+                </div>
+                <button
+                  onClick={closeImageModal}
+                  className='text-gray-400 hover:text-gray-600 text-2xl font-light'
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className='flex-1 overflow-hidden flex'>
+                {/* Image Display */}
+                <div className='flex-1 relative bg-gray-100 flex items-center justify-center min-h-0'>
+                  <img 
+                    src={modalImageData.url} 
+                    alt={modalImageData.title}
+                    className='max-w-full max-h-full object-contain'
+                    style={{ maxHeight: 'calc(90vh - 200px)' }}
+                  />
+                  
+                  {/* Detection overlays for thermal analysis images */}
+                  {modalImageData.detections && modalImageData.detections.length > 0 && (
+                    <div className='absolute inset-0 flex items-center justify-center'>
+                      <div className='relative'>
+                        {modalImageData.detections.map((detection, index) => (
+                          <div
+                            key={index}
+                            className={`absolute border-2 pointer-events-none ${
+                              detection.isCritical ? 'border-red-500' : 'border-yellow-500'
+                            }`}
+                            style={{
+                              left: `${(detection.x / 640) * 100}%`,
+                              top: `${(detection.y / 480) * 100}%`,
+                              width: `${(detection.width / 640) * 100}%`,
+                              height: `${(detection.height / 480) * 100}%`,
+                            }}
+                          >
+                            <div className={`absolute -top-6 left-0 px-2 py-1 text-xs font-bold text-white rounded whitespace-nowrap z-10 ${
+                              detection.isCritical ? 'bg-red-500' : 'bg-yellow-500'
+                            }`}>
+                              {detection.label}
+                              {detection.temperatureCelsius && (
+                                <span className='ml-1'>({detection.temperatureCelsius}°C)</span>
+                              )}
+                            </div>
+                            <div className={`absolute -bottom-5 right-0 px-1 py-0.5 text-xs text-white rounded z-10 ${
+                              detection.isCritical ? 'bg-red-600' : 'bg-yellow-600'
+                            }`}>
+                              {(detection.confidence * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Metadata Panel */}
+                <div className='w-80 bg-gray-50 border-l border-gray-200 p-4 overflow-y-auto'>
+                  <h4 className='font-semibold text-gray-800 mb-3'>Image Details</h4>
+                  <div className='space-y-3'>
+                    {Object.entries(modalImageData.metadata).map(([key, value]) => (
+                      <div key={key} className='flex flex-col'>
+                        <span className='text-xs text-gray-500 uppercase tracking-wide'>{key}</span>
+                        <span className='text-sm text-gray-900 font-medium mt-1'>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Detection Details */}
+                  {modalImageData.detections && modalImageData.detections.length > 0 && (
+                    <div className='mt-6'>
+                      <h5 className='font-semibold text-gray-800 mb-3'>
+                        Detections ({modalImageData.detections.length})
+                      </h5>
+                      <div className='space-y-3 max-h-64 overflow-y-auto'>
+                        {modalImageData.detections.map((detection, index) => (
+                          <div key={index} className={`p-3 rounded-lg border ${
+                            detection.isCritical ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'
+                          }`}>
+                            <div className='flex justify-between items-start mb-2'>
+                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                detection.isCritical ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {detection.label}
+                              </span>
+                              <span className='text-xs text-gray-600'>
+                                {(detection.confidence * 100).toFixed(1)}%
+                              </span>
+                            </div>
+                            <div className='grid grid-cols-2 gap-2 text-xs text-gray-600'>
+                              <div>
+                                <span className='font-medium'>Position:</span> 
+                                <br />({detection.x}, {detection.y})
+                              </div>
+                              <div>
+                                <span className='font-medium'>Size:</span> 
+                                <br />{detection.width}×{detection.height}
+                              </div>
+                              {detection.temperatureCelsius && (
+                                <div className='col-span-2'>
+                                  <span className='font-medium'>Temperature:</span> {detection.temperatureCelsius}°C
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className='p-4 border-t border-gray-200 flex justify-between items-center'>
+                <div className='text-sm text-gray-500'>
+                  Use mouse wheel to zoom • Drag to pan
+                </div>
+                <div className='flex space-x-2'>
+                  {modalImageData.detections && modalImageData.detections.length > 0 && (
+                    <button
+                      onClick={() => {
+                        closeImageModal();
+                        setIsAnnotateModalOpen(true);
+                      }}
+                      className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm'
+                    >
+                      Annotate
+                    </button>
+                  )}
+                  <button
+                    onClick={closeImageModal}
+                    className='px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors text-sm'
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Notification Manager */}

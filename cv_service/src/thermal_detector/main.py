@@ -218,7 +218,7 @@ if __name__ == "__main__":
     
     # Get configuration from environment variables
     host = os.getenv("SERVER_HOST", "0.0.0.0")
-    port = int(os.getenv("SERVER_PORT", "8000"))
+    port = int(os.getenv("PORT", "8000"))
     
     print(f"Starting Thermal Anomaly Detection API server...")
     print(f"Server will be available at: http://{host}:{port}")

@@ -225,7 +225,7 @@ if __name__ == "__main__":
     print(f"API Documentation: http://{host}:{port}/docs")
     
     uvicorn.run(
-        "main:app",
+        "thermal_detector.main:app",
         host=host,
         port=port,
         reload=False  # Set to True for development

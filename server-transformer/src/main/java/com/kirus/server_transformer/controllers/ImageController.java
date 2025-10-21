@@ -54,38 +54,30 @@ public class ImageController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "uploaderName", required = false) String uploaderName) {
 
-        try {
-            Optional<Transformer> transformerOpt = transformerRepository.findById(transformerId);
-            if (transformerOpt.isEmpty()) {
-                return ResponseEntity.badRequest().body("Transformer not found");
-            }
-
-            List<TransformImage> existingImages = transformerImageRepository.findByTransformerId(transformerId);
-
-            if (!existingImages.isEmpty()) {
-                return ResponseEntity.badRequest().body(
-                    "Transformer already has a baseline image. Only one baseline image is allowed per transformer. " +
-                    "Please delete the existing image first if you want to upload a new one."
-                );
-            }
-
-            String s3Key = s3Service.uploadFile(file); // This returns just the key now
-            TransformImage image = new TransformImage();
-            image.setTransformer(transformerOpt.get());
-            image.setImageUrl(s3Key); // Store the S3 key
-            image.setUploaderName(uploaderName != null ? uploaderName : "Unknown");
-            image.setUploadTime(LocalDateTime.now());
-
-            TransformImage savedImage = transformerImageRepository.save(image);
-            TransformerImageDTO dto = transformerImageMapper.toDTO(savedImage);
-
-            // Generate pre-signed URL for the response
-            dto.setImageUrl(s3Service.generatePresignedUrl(savedImage.getImageUrl()));
-
-            return ResponseEntity.ok().body(dto);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to upload image: " + e.getMessage());
+        Optional<Transformer> transformerOpt = transformerRepository.findById(transformerId);
+        if (transformerOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Transformer not found");
         }
+
+        List<TransformImage> existingImages = transformerImageRepository.findByTransformerId(transformerId);
+        if (!existingImages.isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                "Transformer already has a baseline image. Only one baseline image is allowed per transformer."
+            );
+        }
+
+        String publicUrl = s3Service.uploadFile(file);
+        TransformImage image = new TransformImage();
+        image.setTransformer(transformerOpt.get());
+        image.setImageUrl(publicUrl);
+        image.setUploaderName(uploaderName != null ? uploaderName : "Unknown");
+        image.setUploadTime(LocalDateTime.now());
+
+        TransformImage savedImage = transformerImageRepository.save(image);
+        TransformerImageDTO dto = transformerImageMapper.toDTO(savedImage);
+        dto.setImageUrl(savedImage.getImageUrl());
+
+        return ResponseEntity.ok(dto);
     }
 
     // Upload or update inspection image for an inspection
@@ -96,39 +88,31 @@ public class ImageController {
             @RequestParam(value = "environmentalCondition", required = false) String environmentalCondition,
             @RequestParam(value = "uploaderName", required = false) String uploaderName) {
 
-        try {
-            Optional<Inspection> inspectionOpt = inspectionRepository.findById(inspectionId);
-            if (inspectionOpt.isEmpty()) {
-                return ResponseEntity.badRequest().body("Inspection not found");
-            }
-
-            List<InspectionImage> existingImages = inspectionImageRepository.findByInspectionId(inspectionId);
-
-            if (!existingImages.isEmpty()) {
-                return ResponseEntity.badRequest().body(
-                    "Inspection already has an image. Only one image is allowed per inspection. " +
-                    "Please delete the existing image first if you want to upload a new one."
-                );
-            }
-
-            String s3Key = s3Service.uploadFile(file); // This returns just the key now
-            InspectionImage image = new InspectionImage();
-            image.setInspection(inspectionOpt.get());
-            image.setImageUrl(s3Key); // Store the S3 key
-            image.setEnvironmentalCondition(environmentalCondition);
-            image.setUploaderName(uploaderName != null ? uploaderName : "Unknown");
-            image.setUploadTime(LocalDateTime.now());
-
-            InspectionImage savedImage = inspectionImageRepository.save(image);
-            InspectionImageDTO dto = inspectionImageMapper.toDTO(savedImage);
-
-            // Generate pre-signed URL for the response
-            dto.setImageUrl(s3Service.generatePresignedUrl(savedImage.getImageUrl()));
-
-            return ResponseEntity.ok().body(dto);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to upload image: " + e.getMessage());
+        Optional<Inspection> inspectionOpt = inspectionRepository.findById(inspectionId);
+        if (inspectionOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Inspection not found");
         }
+
+        List<InspectionImage> existingImages = inspectionImageRepository.findByInspectionId(inspectionId);
+        if (!existingImages.isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                "Inspection already has an image. Only one image is allowed per inspection."
+            );
+        }
+
+        String publicUrl = s3Service.uploadFile(file);
+        InspectionImage image = new InspectionImage();
+        image.setInspection(inspectionOpt.get());
+        image.setImageUrl(publicUrl);
+        image.setEnvironmentalCondition(environmentalCondition);
+        image.setUploaderName(uploaderName != null ? uploaderName : "Unknown");
+        image.setUploadTime(LocalDateTime.now());
+
+        InspectionImage savedImage = inspectionImageRepository.save(image);
+        InspectionImageDTO dto = inspectionImageMapper.toDTO(savedImage);
+        dto.setImageUrl(savedImage.getImageUrl());
+
+        return ResponseEntity.ok(dto);
     }
 
     // Get baseline image for a transformer
@@ -145,8 +129,7 @@ public class ImageController {
         }
 
         TransformerImageDTO dto = transformerImageMapper.toDTO(images.get(0));
-        // Generate pre-signed URL for frontend access
-        dto.setImageUrl(s3Service.generatePresignedUrl(images.get(0).getImageUrl()));
+        dto.setImageUrl(images.get(0).getImageUrl());
         return ResponseEntity.ok(dto);
     }
 
@@ -164,8 +147,7 @@ public class ImageController {
         }
 
         InspectionImageDTO dto = inspectionImageMapper.toDTO(images.get(0));
-        // Generate pre-signed URL for frontend access
-        dto.setImageUrl(s3Service.generatePresignedUrl(images.get(0).getImageUrl()));
+        dto.setImageUrl(images.get(0).getImageUrl());
         return ResponseEntity.ok(dto);
     }
 
@@ -182,14 +164,7 @@ public class ImageController {
             return ResponseEntity.badRequest().body("No image found to delete");
         }
 
-        // Delete from S3 first
-        try {
-            s3Service.deleteFile(images.get(0).getImageUrl());
-        } catch (Exception e) {
-            // Log but don't fail the operation if S3 delete fails
-            System.err.println("Failed to delete file from S3: " + e.getMessage());
-        }
-
+        s3Service.deleteFile(images.get(0).getImageUrl());
         transformerImageRepository.deleteById(images.get(0).getId());
         return ResponseEntity.ok("Transformer baseline image deleted successfully");
     }
@@ -207,14 +182,7 @@ public class ImageController {
             return ResponseEntity.badRequest().body("No image found to delete");
         }
 
-        // Delete from S3 first
-        try {
-            s3Service.deleteFile(images.get(0).getImageUrl());
-        } catch (Exception e) {
-            // Log but don't fail the operation if S3 delete fails
-            System.err.println("Failed to delete file from S3: " + e.getMessage());
-        }
-
+        s3Service.deleteFile(images.get(0).getImageUrl());
         inspectionImageRepository.deleteById(images.get(0).getId());
         return ResponseEntity.ok("Inspection image deleted successfully");
     }

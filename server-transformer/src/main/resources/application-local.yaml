@@ -1,11 +1,11 @@
-cloud:
-  aws:
-    region:
-      static: ap-southeast-1
-    credentials:
-      access-key: ${AWS_ACCESS_KEY}
-      secret-key: ${AWS_SECRET_KEY}
-
-aws:
-  bucket:
-    name: power-grid
+#cloud:
+#  aws:
+#    region:
+#      static: ap-southeast-1
+#    credentials:
+#      access-key: ${AWS_ACCESS_KEY}
+#      secret-key: ${AWS_SECRET_KEY}
+#
+#aws:
+#  bucket:
+#    name: power-grid

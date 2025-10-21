@@ -1,0 +1,16 @@
+# Core dependencies (mirrors pyproject.toml)
+boto3>=1.40.45
+fastapi>=0.118.0
+numpy>=2.3.3
+opencv-python>=4.11.0.86
+pillow>=11.3.0
+pydantic>=2.11.10
+requests>=2.32.5
+ultralytics>=8.3.205
+uvicorn>=0.37.0
+
+# Runtime dependencies commonly required by Ultralytics/YOLO
+# Note: Install the correct Torch build for your platform (CPU/CUDA). Leaving unpinned lets pip select a compatible wheel.
+torch
+# Ultralytics attempts to auto-install this at runtime; include explicitly for CI/reproducibility
+nvidia-ml-py>=12.0.0

@@ -59,6 +59,7 @@ public class ThermalAnalysisService {
             
             // Validate baseline image exists in transformer_images table, but handle gracefully if not found
             boolean hasValidBaseline = false;
+            TransformImage baselineImage = null;
             if (request.getBaselineImagePath() != null && !request.getBaselineImagePath().trim().isEmpty()) {
                 try {
                     validateTransformerImageExists(request.getBaselineImagePath(), "Baseline image");
@@ -66,7 +67,6 @@ public class ThermalAnalysisService {
                 } catch (RuntimeException e) {
                     logger.warn("Baseline image validation failed, proceeding with standard analysis: {}", e.getMessage());
                     // Continue without baseline - this will trigger fallback analysis
-                    hasValidBaseline = false;
                 }
             }
 
@@ -76,7 +76,9 @@ public class ThermalAnalysisService {
 
             // Get image entities
             InspectionImage maintenanceImage = getInspectionImageById(request.getMaintenanceImagePath());
-            TransformImage baselineImage = hasValidBaseline ? getTransformerImageById(request.getBaselineImagePath()) : null;
+            if (hasValidBaseline) {
+                baselineImage = getTransformerImageById(request.getBaselineImagePath());
+            }
 
             // Prepare FastAPI request
             FastApiThermalRequest fastApiRequest = new FastApiThermalRequest();
@@ -95,8 +97,8 @@ public class ThermalAnalysisService {
             logger.info("FastAPI response received: detections count = {}",
                 fastApiResponse.getDetections() != null ? fastApiResponse.getDetections().size() : 0);
 
-            // Create and save thermal analysis entity
-            ThermalAnalysis analysis = createThermalAnalysis(request, maintenanceImage, fastApiResponse);
+            // Create and save thermal analysis entity (now include baselineImage)
+            ThermalAnalysis analysis = createThermalAnalysis(request, maintenanceImage, baselineImage, fastApiResponse);
             final ThermalAnalysis savedAnalysis = thermalAnalysisRepository.save(analysis);
 
             logger.info("Thermal analysis saved with ID: {}", savedAnalysis.getId());
@@ -281,11 +283,12 @@ public class ThermalAnalysisService {
                 throw new RuntimeException("Image URL is null or empty for image ID: " + imageId);
             }
 
-            return s3Service.generatePresignedUrl(image.getImageUrl());
+            // Use buildPublicUrl which returns the URL if already a URL or constructs it from key
+            return s3Service.buildPublicUrl(image.getImageUrl());
         } catch (NumberFormatException e) {
             // Assume it's an S3 key
             logger.info("Treating '{}' as S3 key rather than image ID", imagePath);
-            return s3Service.generatePresignedUrl(imagePath);
+            return s3Service.buildPublicUrl(imagePath);
         }
     }
 
@@ -333,10 +336,10 @@ public class ThermalAnalysisService {
                 throw new RuntimeException("Transformer image URL is null or empty for image ID: " + imageId);
             }
 
-            return s3Service.generatePresignedUrl(image.getImageUrl());
+            return s3Service.buildPublicUrl(image.getImageUrl());
         } catch (NumberFormatException e) {
             logger.info("Treating '{}' as S3 key rather than image ID", imagePath);
-            return s3Service.generatePresignedUrl(imagePath);
+            return s3Service.buildPublicUrl(imagePath);
         }
     }
 
@@ -372,9 +375,11 @@ public class ThermalAnalysisService {
 
     private ThermalAnalysis createThermalAnalysis(ThermalAnalysisRequest request,
                                                  InspectionImage maintenanceImage,
+                                                 TransformImage baselineImage,
                                                  FastApiThermalResponse fastApiResponse) {
         ThermalAnalysis analysis = new ThermalAnalysis();
         analysis.setMaintenanceImage(maintenanceImage);
+        analysis.setBaselineImage(baselineImage);
         // Note: baseline image is stored in transformer_images table, not inspection_images
         analysis.setAnalysisTimestamp(LocalDateTime.now());
         analysis.setOverallAssessment(parseAssessmentType(fastApiResponse.getOverallAssessment()));
@@ -496,11 +501,11 @@ public class ThermalAnalysisService {
         ThermalAnalysisResponse response = new ThermalAnalysisResponse();
         response.setId(analysis.getId());
         response.setMaintenanceImageId(analysis.getMaintenanceImage().getId());
-        response.setMaintenanceImageUrl(s3Service.generatePresignedUrl(analysis.getMaintenanceImage().getImageUrl()));
+        response.setMaintenanceImageUrl(s3Service.buildPublicUrl(analysis.getMaintenanceImage().getImageUrl()));
 
         if (analysis.getBaselineImage() != null) {
             response.setBaselineImageId(analysis.getBaselineImage().getId());
-            response.setBaselineImageUrl(s3Service.generatePresignedUrl(analysis.getBaselineImage().getImageUrl()));
+            response.setBaselineImageUrl(s3Service.buildPublicUrl(analysis.getBaselineImage().getImageUrl()));
         }
 
         response.setAnalysisTimestamp(analysis.getAnalysisTimestamp());

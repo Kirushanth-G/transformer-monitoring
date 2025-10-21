@@ -1,6 +1,9 @@
 """FastAPI server for thermal image anomaly detection."""
 
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "0"
+
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -19,6 +22,11 @@ app = FastAPI(
     description="AI-powered thermal image analysis for electrical equipment monitoring",
     version="1.0.0"
 )
+
+# Root endpoint
+@app.get("/")
+def root():
+    return {"status": "ok"}
 
 # Global variables for model and detector (loaded once at startup)
 _detector: Optional[ThermalAnomalyDetector] = None
@@ -126,6 +134,11 @@ async def load_model_and_detector():
         # Load YOLO model
         print(f"Loading YOLO model from: {model_path}")
         yolo_model = YOLO(str(model_path))
+        try:
+            yolo_model.to("cpu")
+            print("YOLO model moved to CPU.")
+        except Exception as e:
+            print("Warning: failed to call .to('cpu') on YOLO model:", e)
         
         # Load configuration
         print(f"Loading configuration from: {config_path}")
@@ -198,7 +211,7 @@ async def analyze_thermal_image(request: ThermalAnalysisRequest):
             maintenance_image_path=maintenance_local_path,
             baseline_image_path=baseline_local_path,
             save_annotation=request.save_annotation_path,
-            device=request.processing_device,
+            device=-1,
             image_size=request.input_image_size,
             use_half_precision=request.use_half_precision,
             return_web_format=request.web_response_format,
@@ -218,14 +231,14 @@ if __name__ == "__main__":
     
     # Get configuration from environment variables
     host = os.getenv("SERVER_HOST", "0.0.0.0")
-    port = int(os.getenv("SERVER_PORT", "8000"))
+    port = int(os.getenv("PORT", "8000"))
     
     print(f"Starting Thermal Anomaly Detection API server...")
     print(f"Server will be available at: http://{host}:{port}")
     print(f"API Documentation: http://{host}:{port}/docs")
     
     uvicorn.run(
-        "main:app",
+        "thermal_detector.main:app",
         host=host,
         port=port,
         reload=False  # Set to True for development

@@ -2,14 +2,14 @@ package com.kirus.server_transformer.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -17,82 +17,90 @@ import java.time.Duration;
 @Service
 public class S3Service {
 
-    @Autowired
-    private S3Client s3Client;
+    @Value("${supabase.storage.url}")
+    private String storageUrl;
 
-    @Autowired
-    private S3Presigner s3Presigner;   // ⚡ Add this bean
-
-    @Value("${aws.bucket.name}")
+    // Use Supabase S3 properties (public bucket)
+    @Value("${supabase.s3.bucket}")
     private String bucketName;
+
+    @Value("${supabase.service.key}")
+    private String serviceKey;
+
+    private final RestClient restClient;
+
+    public S3Service() {
+        this.restClient = RestClient.create();
+    }
 
     public String uploadFile(MultipartFile file) {
         try {
-            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            String original = file.getOriginalFilename();
+            String safeName = (original == null || original.isBlank()) ? "file" : original.replaceAll("[^a-zA-Z0-9._-]", "_");
+            String fileName = System.currentTimeMillis() + "_" + safeName;
 
-            // Upload file to S3
-            s3Client.putObject(PutObjectRequest.builder()
-                            .bucket(bucketName)
-                            .key(fileName)
-                            .build(),
-                    RequestBody.fromBytes(file.getBytes()));
+            String uploadUrl = storageUrl + "/object/" + bucketName + "/" + fileName;
 
-            return fileName; // Return only the key/filename
+            restClient.post()
+                    .uri(uploadUrl)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceKey)
+                    .contentType(MediaType.parseMediaType(file.getContentType()))
+                    .body(file.getBytes())
+                    .retrieve()
+                    .toBodilessEntity();
+
+            return storageUrl + "/object/public/" + bucketName + "/" + fileName;
         } catch (IOException e) {
-            throw new RuntimeException("Failed to upload file to S3", e);
+            throw new RuntimeException("Failed to upload file", e);
         }
     }
 
-    // Generate pre-signed URL (valid for 10 minutes)
-    public String generatePresignedUrl(String key) {
-        // Extract just the filename if a full URL was passed
-        if (key.contains("/")) {
-            key = key.substring(key.lastIndexOf("/") + 1);
+    // New helper: construct public URL for a given key or return input if already a URL
+    public String buildPublicUrl(String keyOrUrl) {
+        if (keyOrUrl == null || keyOrUrl.trim().isEmpty()) {
+            throw new IllegalArgumentException("Key or URL cannot be null or empty");
         }
 
-        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucketName)
-                .key(key)
-                .build();
-
-        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofMinutes(10)) // URL valid for 10 min
-                .getObjectRequest(getObjectRequest)
-                .build();
-
-        return s3Presigner.presignGetObject(presignRequest).url().toString();
-    }
-
-    public void deleteFile(String key) {
-        // Extract just the filename if a full URL was passed
-        if (key.contains("/")) {
-            key = key.substring(key.lastIndexOf("/") + 1);
+        String trimmed = keyOrUrl.trim();
+        if (trimmed.startsWith("http")) {
+            return trimmed;
         }
 
-        final String finalKey = key; // Make it final for lambda
-
-        s3Client.deleteObject(builder -> builder
-                .bucket(bucketName)
-                .key(finalKey)
-                .build());
+        return storageUrl + "/object/public/" + bucketName + "/" + trimmed;
     }
 
-    public boolean doesObjectExist(String key) {
-        try {
-            // Extract just the filename if a full URL was passed
-            if (key.contains("/")) {
-                key = key.substring(key.lastIndexOf("/") + 1);
+    public void deleteFile(String keyOrUrl) {
+        String objectKey = extractObjectKey(keyOrUrl);
+        String deleteUrl = storageUrl + "/object/" + bucketName + "/" + objectKey;
+
+        restClient.delete()
+                .uri(deleteUrl)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceKey)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
+    // Helper to extract the object key from a Supabase public URL or return the provided key unchanged
+    private String extractObjectKey(String keyOrUrl) {
+        if (keyOrUrl == null) return "";
+        String trimmed = keyOrUrl.trim();
+
+        if (trimmed.startsWith("http")) {
+            // Try to find '/object/public/{bucket}/' segment and return the substring after it
+            String marker = "/object/public/" + bucketName + "/";
+            int idx = trimmed.indexOf(marker);
+            if (idx != -1) {
+                return trimmed.substring(idx + marker.length());
             }
 
-            final String finalKey = key; // Make it final for lambda
-
-            s3Client.headObject(builder -> builder
-                    .bucket(bucketName)
-                    .key(finalKey)
-                    .build());
-            return true;
-        } catch (Exception e) {
-            return false;
+            // Fallback: return last path segment
+            if (trimmed.contains("/")) {
+                return trimmed.substring(trimmed.lastIndexOf("/") + 1);
+            }
+            return trimmed;
+        } else {
+            // Treat as a plain key (may include folders)
+            return trimmed;
         }
     }
 }

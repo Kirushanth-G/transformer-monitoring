@@ -33,6 +33,11 @@ class ThermalAnomalyDetector:
         """Initialize detector with pre-loaded YOLO model and configuration."""
         self.model = model
         self.config = config
+        # Ensure model stays on CPU
+        try:
+            self.model.to("cpu")
+        except Exception:
+            pass
     
     def detect_anomalies(
         self, 
@@ -125,7 +130,7 @@ class ThermalAnomalyDetector:
     ) -> List[Dict[str, Any]]:
         """Run YOLO inference and return filtered detections."""
         predictions = self.model.predict(
-            image, device=device, half=use_half, imgsz=image_size, verbose=False
+            image, device="cpu", half=use_half, imgsz=image_size, verbose=False
         )[0]
         
         detections = []

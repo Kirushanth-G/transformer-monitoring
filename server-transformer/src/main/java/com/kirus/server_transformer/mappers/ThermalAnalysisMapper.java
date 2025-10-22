@@ -23,6 +23,8 @@ public interface ThermalAnalysisMapper {
     @Mapping(target = "criticalDetections", expression = "java(countCriticalDetections(analysis.getDetections()))")
     @Mapping(target = "warningDetections", expression = "java(countWarningDetections(analysis.getDetections()))")
     @Mapping(target = "annotatedImageUrl", ignore = true) // Set separately in service
+    @Mapping(target = "hasUserAnnotations", ignore = true)
+    @Mapping(target = "userAnnotations", ignore = true)
     ThermalAnalysisResponse toResponse(ThermalAnalysis analysis);
 
     List<ThermalAnalysisResponse> toResponseList(List<ThermalAnalysis> analyses);

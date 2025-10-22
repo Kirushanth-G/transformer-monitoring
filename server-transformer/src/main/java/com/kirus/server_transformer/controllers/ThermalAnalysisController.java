@@ -4,6 +4,7 @@ import com.kirus.server_transformer.dtos.ThermalAnalysisRequest;
 import com.kirus.server_transformer.dtos.ThermalAnalysisResponse;
 import com.kirus.server_transformer.entities.AnomalyDetection;
 import com.kirus.server_transformer.entities.ThermalAnalysis;
+import com.kirus.server_transformer.mappers.ThermalAnalysisMapper;
 import com.kirus.server_transformer.repositories.AnomalyDetectionRepository;
 import com.kirus.server_transformer.repositories.InspectionImageRepository;
 import com.kirus.server_transformer.repositories.ThermalAnalysisRepository;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,16 +34,17 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+@Slf4j
+@CrossOrigin(origins = {"http://localhost:5173", "http://react-powergrid.s3-website-ap-southeast-1.amazonaws.com"})
 @RestController
 @RequestMapping("/api/thermal")
 @Tag(name = "Thermal Analysis", description = "API for thermal image analysis operations")
-@CrossOrigin(origins = "*")
 public class ThermalAnalysisController {
 
     private static final Logger logger = LoggerFactory.getLogger(ThermalAnalysisController.class);
 
-    @Autowired
-    private ThermalAnalysisService thermalAnalysisService;
+    private final ThermalAnalysisService thermalAnalysisService;
+    private final ThermalAnalysisMapper thermalAnalysisMapper;
 
     @Autowired
     private FastApiClientService fastApiClientService;
@@ -57,6 +60,11 @@ public class ThermalAnalysisController {
 
     @Autowired
     private ThermalAnalysisRepository thermalAnalysisRepository;
+
+    public ThermalAnalysisController(ThermalAnalysisService thermalAnalysisService, ThermalAnalysisMapper thermalAnalysisMapper) {
+        this.thermalAnalysisService = thermalAnalysisService;
+        this.thermalAnalysisMapper = thermalAnalysisMapper;
+    }
 
     @Operation(summary = "Analyze thermal image", description = "Perform thermal analysis on an inspection image")
     @ApiResponses(value = {
@@ -298,7 +306,6 @@ public class ThermalAnalysisController {
     public ResponseEntity<List<Map<String, Object>>> getAllDetections() {
         try {
             List<AnomalyDetection> allDetections = anomalyDetectionRepository.findAll();
-
             List<Map<String, Object>> detectionInfo = allDetections.stream()
                 .map(detection -> {
                     Map<String, Object> info = new HashMap<>();
@@ -320,6 +327,4 @@ public class ThermalAnalysisController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-
 }

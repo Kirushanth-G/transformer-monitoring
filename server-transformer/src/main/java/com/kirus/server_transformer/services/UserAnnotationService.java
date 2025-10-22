@@ -1,5 +1,6 @@
 package com.kirus.server_transformer.services;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kirus.server_transformer.dtos.AnnotationSaveRequest;
 import com.kirus.server_transformer.dtos.UserAnnotationDto;
@@ -73,6 +74,41 @@ public class UserAnnotationService {
         return annotations.stream()
                 .map(userAnnotationMapper::toDto)
                 .toList();
+    }
+
+    // New method to convert user annotations to detection format for display
+    public List<Map<String, Object>> getUserAnnotationsAsDetections(Long imageId) {
+        List<UserAnnotation> annotations = userAnnotationRepository.findByImageId(imageId);
+        
+        return annotations.stream().map(annotation -> {
+            try {
+                // Parse the bb JSON string
+                Map<String, Object> bbData = objectMapper.readValue(
+                    annotation.getBb(), 
+                    new TypeReference<Map<String, Object>>() {}
+                );
+                
+                Map<String, Object> detection = new HashMap<>();
+                detection.put("id", annotation.getId());
+                detection.put("x", bbData.get("x"));
+                detection.put("y", bbData.get("y"));
+                detection.put("width", bbData.get("width"));
+                detection.put("height", bbData.get("height"));
+                detection.put("label", bbData.get("label"));
+                detection.put("confidence", 1.0); // User annotations have 100% confidence
+                detection.put("isCritical", false); // User can set this based on label
+                detection.put("source", "user"); // Mark as user annotation
+                detection.put("userId", annotation.getUserId());
+                detection.put("timestamp", annotation.getTimestamp());
+                
+                return detection;
+            } catch (Exception e) {
+                log.error("Failed to parse annotation bb JSON: {}", annotation.getBb(), e);
+                return null;
+            }
+        })
+        .filter(detection -> detection != null)
+        .toList();
     }
 
     @Transactional

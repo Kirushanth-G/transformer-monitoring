@@ -33,4 +33,6 @@ public class ThermalAnalysisResponse {
     private Integer criticalDetections;
     private Integer warningDetections;
     private String annotatedImageUrl; // URL to the annotated result image
+    private Boolean hasUserAnnotations; // Flag indicating if user annotations exist
+    private List<AnomalyDetectionDto> userAnnotations; // User-created annotations (optional)
 }

@@ -18,6 +18,7 @@ public abstract class UserAnnotationMapper {
     public abstract UserAnnotationDto toDto(UserAnnotation userAnnotation);
 
     @Mapping(target = "image", ignore = true)
+    @Mapping(target = "inspection", ignore = true)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     public abstract UserAnnotation toEntity(UserAnnotationDto userAnnotationDto);

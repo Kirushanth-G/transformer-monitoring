@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -199,6 +200,31 @@ public class InspectionController {
       
       List<UserAnnotationDto> annotations = userAnnotationService.getAnnotationsByImageId(imageId);
       return ResponseEntity.ok(annotations);
+      
+    } catch (Exception e) {
+      return ResponseEntity.status(500).build();
+    }
+  }
+
+  // Check if user annotations exist for an image
+  @GetMapping("/{id}/annotations/{imageId}/exists")
+  public ResponseEntity<Map<String, Object>> checkAnnotationsExist(
+      @PathVariable Long id,
+      @PathVariable Long imageId
+  ) {
+    try {
+      if (!inspectionRepository.existsById(id)) {
+        return ResponseEntity.notFound().build();
+      }
+      
+      List<UserAnnotationDto> annotations = userAnnotationService.getAnnotationsByImageId(imageId);
+      boolean exists = annotations != null && !annotations.isEmpty();
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("exists", exists);
+      response.put("count", exists ? annotations.size() : 0);
+      
+      return ResponseEntity.ok(response);
       
     } catch (Exception e) {
       return ResponseEntity.status(500).build();

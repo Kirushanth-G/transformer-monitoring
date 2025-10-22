@@ -159,10 +159,20 @@ export const thermalApi = {
     await axios.delete(`${THERMAL_API_URL}/${id}`);
   },
 
+  // Get user annotations for an image
+  getUserAnnotations: async (inspectionId, imageId) => {
+    const response = await axios.get(`/inspections/${inspectionId}/annotations/${imageId}`);
+    return response.data;
+  },
+
+  // Check if user annotations exist for an image
+  checkUserAnnotationsExist: async (inspectionId, imageId) => {
+    const response = await axios.get(`/inspections/${inspectionId}/annotations/${imageId}/exists`);
+    return response.data;
+  },
+
   // Reset to AI for a given inspection/image (remove user annotations)
   resetUserAnnotations: async (inspectionId, imageId) => {
-    await axios.delete(`/api/inspections/${inspectionId}/annotations`, {
-      params: { imageId }
-    });
+    await axios.delete(`/inspections/${inspectionId}/annotations/${imageId}`);
   }
 };

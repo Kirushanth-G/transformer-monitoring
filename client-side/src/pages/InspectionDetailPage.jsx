@@ -80,6 +80,7 @@ function InspectionDetailPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // First declarations (keep)
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => isMobile && setIsSidebarOpen(false);
 
@@ -388,48 +389,44 @@ function InspectionDetailPage() {
       }
       console.log('Saving annotation feedback:', feedback);
       try {
-        await axios.post(`/api/inspections/${id}/annotations`, {
+        const response = await axios.post(`/api/inspections/${inspection.id}/annotations`, {
           imageId: inspectionImage.id,
           feedback,
         });
-        showSuccess('Annotations saved successfully!');
-        fetchImageAnalysisHistory();
+        
+        console.log('Save response:', response.data);
+        showSuccess(`Annotations saved successfully! (${response.data.count || 0} annotations)`);
+        
+        // Re-fetch latest analysis so user annotations override AI on display
+        await fetchImageAnalysisHistory();
+        const latest = await getLatestImageAnalysis();
+        if (latest) setThermalAnalysisResult(latest);
       } catch (error) {
         console.error('Failed to save annotations:', error);
-        showError('Could not save annotations. Please try again.');
+        const errorMessage = error.response?.data?.error || error.message || 'Unknown error';
+        showError(`Could not save annotations: ${errorMessage}`);
       }
     },
-    [id, inspection?.id, inspectionImage?.id, showSuccess, showError, fetchImageAnalysisHistory]
+    [inspection?.id, inspectionImage?.id, showSuccess, showError, fetchImageAnalysisHistory, getLatestImageAnalysis]
   );
 
-  // Handle file selection
-  const handleFileSelect = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        showError('Please select a valid image file');
-        return;
-      }
-      // Validate file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        showError('File size must be less than 10MB');
-        return;
-      }
-      setSelectedFile(file);
+  const handleResetToAI = useCallback(async () => {
+    if (!inspection?.id || !inspectionImage?.id) {
+      showError('Cannot reset without inspection and image ID.');
+      return;
     }
-  };
-
-  // Opens an image in a wider modal view
-  const openImageModal = (imageData) => {
-    setModalImageData(imageData);
-    setIsImageModalOpen(true);
-  };
-
-  const closeImageModal = () => {
-    setIsImageModalOpen(false);
-    setModalImageData(null);
-  };
+    try {
+      await axios.delete(`/api/inspections/${inspection.id}/annotations/${inspectionImage.id}`);
+      showSuccess('Reset to AI annotations');
+      // Refresh latest analysis so AI detections are shown
+      await fetchImageAnalysisHistory();
+      const latest = await getLatestImageAnalysis();
+      if (latest) setThermalAnalysisResult(latest);
+    } catch (err) {
+      console.error('Reset to AI failed:', err);
+      showError(`Failed to reset to AI annotations: ${err.message}`);
+    }
+  }, [inspection?.id, inspectionImage?.id, showError, showSuccess, fetchImageAnalysisHistory, getLatestImageAnalysis]);
 
   // Fetch transformer details when inspection is loaded
   useEffect(() => {
@@ -839,14 +836,15 @@ function InspectionDetailPage() {
                         />
                       </svg>
                     </button>
-
-                      {/* onClick={() => setIsAnnotateModalOpen(true)}
-                      className='p-1 hover:bg-gray-100 rounded'>
-                      <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z' />
-                      </svg>
-                    </button> */}
-                    
+                    {/* Reset to AI button */}
+                    <button
+                      onClick={handleResetToAI}
+                      className='px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200'
+                      title='Reset to AI annotations'
+                      disabled={!inspectionImage}
+                    >
+                      Reset to AI
+                    </button>
                     <button className='p-1 hover:bg-gray-100 rounded'>
                       <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
@@ -1641,7 +1639,8 @@ function InspectionDetailPage() {
                               <div>
                                 <p className='text-gray-600'>Detections</p>
                                 <p className='font-semibold'>
-                                  <span className='text-red-600'>{analysis.criticalDetections || 0}</span> / {analysis.totalDetections || 0}
+                                  <span className='text-red-600'>{analysis.criticalDetections || 0}</span>
+                                  / {analysis.totalDetections || 0}
                                 </p>
                               </div>
                               <div>

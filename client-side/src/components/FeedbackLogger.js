@@ -46,9 +46,10 @@ class FeedbackLogger {
       console.log('Feedback logged successfully:', logEntry.id);
       return logEntry.id;
     } catch (error) {
-      console.error('Failed to save feedback:', error);
+      console.warn('Failed to save feedback to backend, storing locally:', error);
       // Store locally as fallback
       this.saveFeedbackLocally(logEntry);
+      // Don't throw - allow annotation save to succeed even if feedback logging fails
       return logEntry.id;
     }
   }

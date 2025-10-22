@@ -17,8 +17,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
-@CrossOrigin(origins = {"http://localhost:5173" , "http://react-powergrid.s3-website-ap-southeast-1.amazonaws.com"})
+@CrossOrigin(
+  origins = {"http://localhost:5173" , "http://react-powergrid.s3-website-ap-southeast-1.amazonaws.com"},
+  allowedHeaders = {"*"},
+  methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS },
+  maxAge = 3600
+)
 @AllArgsConstructor
 @RestController
 @RequestMapping("/inspections")
@@ -131,6 +137,44 @@ public class InspectionController {
       return ResponseEntity.notFound().build();
     }
     inspectionRepository.delete(inspection);
+    return ResponseEntity.noContent().build();
+  }
+
+  // Save/override annotations for an inspection image
+  @PostMapping("/{id}/annotations")
+  public ResponseEntity<Map<String, Object>> saveAnnotations(
+      @PathVariable Long id,
+      @RequestBody Map<String, Object> payload
+  ) {
+    // Optional: validate inspection exists
+    if (!inspectionRepository.existsById(id)) {
+      return ResponseEntity.notFound().build();
+    }
+
+    // Extract count for client UI feedback
+    int count = 0;
+    Object feedback = payload.get("feedback");
+    if (feedback instanceof Map) {
+      Object annotations = ((Map<?, ?>) feedback).get("annotations");
+      if (annotations instanceof List) {
+        count = ((List<?>) annotations).size();
+      }
+    }
+
+    // TODO: persist annotations as needed
+    return ResponseEntity.ok(Map.of("saved", true, "count", count));
+  }
+
+  // Reset/delete annotations for a given inspection image
+  @DeleteMapping("/{id}/annotations/{imageId}")
+  public ResponseEntity<Void> resetAnnotations(
+      @PathVariable Long id,
+      @PathVariable String imageId
+  ) {
+    if (!inspectionRepository.existsById(id)) {
+      return ResponseEntity.notFound().build();
+    }
+    // TODO: delete/reset annotations for the given imageId if persisted
     return ResponseEntity.noContent().build();
   }
 }

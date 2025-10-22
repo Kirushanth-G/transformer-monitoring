@@ -574,9 +574,8 @@ function AnnotateImageModal({
     setSelectedBoxId(null);
   };
 
-  // Modify handleSave to show user ID modal first
+  // Modify handleSave to avoid sending if no annotations left (optional guard)
   const handleSave = () => {
-    // Format boxes for saving, ensuring all required fields are present
     const formattedBoxes = boxes.map(box => ({
       id: box.id,
       x: box.x,
@@ -592,6 +591,12 @@ function AnnotateImageModal({
       confidence: box.confidence || null,
       metadata: box.metadata
     }));
+
+    // If nothing to save and nothing changed, just close
+    if (formattedBoxes.length === 0) {
+      onClose();
+      return;
+    }
 
     const feedback = {
       annotations: formattedBoxes, // All annotations including modified ones

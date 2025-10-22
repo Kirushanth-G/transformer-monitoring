@@ -157,5 +157,12 @@ export const thermalApi = {
   // Delete analysis
   deleteAnalysis: async (id) => {
     await axios.delete(`${THERMAL_API_URL}/${id}`);
+  },
+
+  // Reset to AI for a given inspection/image (remove user annotations)
+  resetUserAnnotations: async (inspectionId, imageId) => {
+    await axios.delete(`/api/inspections/${inspectionId}/annotations`, {
+      params: { imageId }
+    });
   }
 };

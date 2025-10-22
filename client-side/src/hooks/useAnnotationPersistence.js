@@ -23,7 +23,8 @@ export const useAnnotationPersistence = (imageId, transformerId, userId) => {
     setError(null);
     
     try {
-      const response = await fetch(`/api/annotations/${imgId}`);
+      // Updated endpoint to match backend
+      const response = await fetch(`/api/user-annotations/${imgId}`);
       if (response.ok) {
         const data = await response.json();
         setSavedAnnotations(data.annotations || []);
@@ -67,8 +68,8 @@ export const useAnnotationPersistence = (imageId, transformerId, userId) => {
         }
       };
 
-      // Save to backend
-      const response = await fetch('/api/annotations', {
+      // Save to backend - Use axios from configured instance
+      const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,15 +83,19 @@ export const useAnnotationPersistence = (imageId, transformerId, userId) => {
 
       const result = await response.json();
       
-      // Log feedback for model improvement
-      await feedbackLogger.logFeedback({
-        ...annotationData,
-        metadata: {
-          imageId,
-          transformerId,
-          userId
-        }
-      });
+      // Log feedback for model improvement (separate from annotation save)
+      try {
+        await feedbackLogger.logFeedback({
+          ...annotationData,
+          metadata: {
+            imageId,
+            transformerId,
+            userId
+          }
+        });
+      } catch (feedbackError) {
+        console.warn('Failed to log feedback, but annotations saved:', feedbackError);
+      }
 
       setSavedAnnotations(result.annotations);
       return result;

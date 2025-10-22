@@ -4,11 +4,14 @@ import com.kirus.server_transformer.dtos.InspectionCreateRequest;
 import com.kirus.server_transformer.dtos.InspectionDto;
 import com.kirus.server_transformer.dtos.InspectionUpdateRequest;
 import com.kirus.server_transformer.dtos.PagedResponse;
+import com.kirus.server_transformer.dtos.AnnotationSaveRequest;
+import com.kirus.server_transformer.dtos.UserAnnotationDto;
 import com.kirus.server_transformer.entities.Inspection;
 import com.kirus.server_transformer.entities.Transformer;
 import com.kirus.server_transformer.mappers.InspectionMapper;
 import com.kirus.server_transformer.repositories.InspectionRepository;
 import com.kirus.server_transformer.repositories.TransformerRepository;
+import com.kirus.server_transformer.services.UserAnnotationService;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,6 +36,7 @@ public class InspectionController {
   private final InspectionRepository inspectionRepository;
   private final InspectionMapper inspectionMapper;
   private final TransformerRepository transformerRepository;
+  private final UserAnnotationService userAnnotationService;
 
   @GetMapping
   public ResponseEntity<PagedResponse<InspectionDto>> getAllInspections(
@@ -144,37 +148,60 @@ public class InspectionController {
   @PostMapping("/{id}/annotations")
   public ResponseEntity<Map<String, Object>> saveAnnotations(
       @PathVariable Long id,
-      @RequestBody Map<String, Object> payload
+      @RequestBody AnnotationSaveRequest request
   ) {
-    // Optional: validate inspection exists
-    if (!inspectionRepository.existsById(id)) {
-      return ResponseEntity.notFound().build();
-    }
-
-    // Extract count for client UI feedback
-    int count = 0;
-    Object feedback = payload.get("feedback");
-    if (feedback instanceof Map) {
-      Object annotations = ((Map<?, ?>) feedback).get("annotations");
-      if (annotations instanceof List) {
-        count = ((List<?>) annotations).size();
+    try {
+      // Validate inspection exists
+      if (!inspectionRepository.existsById(id)) {
+        return ResponseEntity.notFound().build();
       }
-    }
 
-    // TODO: persist annotations as needed
-    return ResponseEntity.ok(Map.of("saved", true, "count", count));
+      // Save annotations using the service
+      Map<String, Object> response = userAnnotationService.saveAnnotations(id, request);
+      return ResponseEntity.ok(response);
+      
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    } catch (Exception e) {
+      return ResponseEntity.status(500).body(Map.of("error", "Failed to save annotations: " + e.getMessage()));
+    }
   }
 
   // Reset/delete annotations for a given inspection image
   @DeleteMapping("/{id}/annotations/{imageId}")
-  public ResponseEntity<Void> resetAnnotations(
+  public ResponseEntity<Map<String, Object>> resetAnnotations(
       @PathVariable Long id,
-      @PathVariable String imageId
+      @PathVariable Long imageId
   ) {
-    if (!inspectionRepository.existsById(id)) {
-      return ResponseEntity.notFound().build();
+    try {
+      if (!inspectionRepository.existsById(id)) {
+        return ResponseEntity.notFound().build();
+      }
+      
+      userAnnotationService.deleteAnnotationsByImageId(imageId);
+      return ResponseEntity.ok(Map.of("reset", true, "imageId", imageId));
+      
+    } catch (Exception e) {
+      return ResponseEntity.status(500).body(Map.of("error", "Failed to reset annotations: " + e.getMessage()));
     }
-    // TODO: delete/reset annotations for the given imageId if persisted
-    return ResponseEntity.noContent().build();
+  }
+
+  // Get annotations for an image
+  @GetMapping("/{id}/annotations/{imageId}")
+  public ResponseEntity<List<UserAnnotationDto>> getAnnotations(
+      @PathVariable Long id,
+      @PathVariable Long imageId
+  ) {
+    try {
+      if (!inspectionRepository.existsById(id)) {
+        return ResponseEntity.notFound().build();
+      }
+      
+      List<UserAnnotationDto> annotations = userAnnotationService.getAnnotationsByImageId(imageId);
+      return ResponseEntity.ok(annotations);
+      
+    } catch (Exception e) {
+      return ResponseEntity.status(500).build();
+    }
   }
 }

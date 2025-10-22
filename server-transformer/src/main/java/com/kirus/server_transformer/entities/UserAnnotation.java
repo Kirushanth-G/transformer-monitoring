@@ -3,6 +3,8 @@ package com.kirus.server_transformer.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -17,19 +19,19 @@ public class UserAnnotation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Link to inspection image (maintenance image)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id", nullable = false)
     private InspectionImage image;
 
-    // Bounding box JSON: {"x":..., "y":..., "width":..., "height":...}
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inspection_id", nullable = false)
+    private Inspection inspection;
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "bb", nullable = false, columnDefinition = "jsonb")
-    private String bb;
+    private String bb; // {"x": int, "y": int, "width": int, "height": int, "label": "string"}
 
-    @Column(name = "type", length = 100)
-    private String type;
-
-    @Column(name = "timestamp")
+    @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
 
     @Column(name = "user_id", length = 100)

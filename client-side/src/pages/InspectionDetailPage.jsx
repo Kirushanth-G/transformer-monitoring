@@ -389,13 +389,64 @@ function InspectionDetailPage() {
       }
       console.log('Saving annotation feedback:', feedback);
       try {
-        const response = await axios.post(`/api/inspections/${inspection.id}/annotations`, {
+        // Transform annotations to match backend DTO structure
+        const transformAnnotation = (ann) => {
+          const x = Math.round(ann.x || 0);
+          const y = Math.round(ann.y || 0);
+          const width = Math.round(ann.width || 0);
+          const height = Math.round(ann.height || 0);
+          
+          return {
+            x: x,
+            y: y,
+            width: width,
+            height: height,
+            label: ann.label || 'Unknown',
+            status: ann.status || 'active',
+            confidence: ann.confidence || 1.0
+          };
+        };
+
+        // Combine all non-deleted annotations
+        const allAnnotations = [
+          ...(feedback.added || []).map(transformAnnotation),
+          ...(feedback.edited || []).map(transformAnnotation),
+          ...(feedback.annotations || [])
+            .filter(ann => !feedback.deleted?.some(del => del.id === ann.id))
+            .map(transformAnnotation)
+        ];
+
+        // Match the exact backend DTO structure: AnnotationSaveRequest
+        const requestPayload = {
           imageId: inspectionImage.id,
-          feedback,
-        });
+          feedback: {
+            annotations: allAnnotations,
+            metadata: {
+              userId: feedback.metadata?.userId || 'unknown',
+              timestamp: new Date().toISOString(),
+              imageId: inspectionImage.id.toString(),
+              transformerId: inspection.transformerId,
+              totalAnnotations: allAnnotations.length,
+              userModifications: (feedback.added?.length || 0) + (feedback.edited?.length || 0) + (feedback.deleted?.length || 0)
+            }
+          }
+        };
+
+        console.log('Sending annotation request:', JSON.stringify(requestPayload, null, 2));
+
+        const response = await axios.post(
+          `/inspections/${inspection.id}/annotations`, 
+          requestPayload,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          }
+        );
         
         console.log('Save response:', response.data);
-        showSuccess(`Annotations saved successfully! (${response.data.count || 0} annotations)`);
+        showSuccess(`Annotations saved successfully! (${response.data.count || allAnnotations.length} annotations)`);
         
         // Re-fetch latest analysis so user annotations override AI on display
         await fetchImageAnalysisHistory();
@@ -403,11 +454,13 @@ function InspectionDetailPage() {
         if (latest) setThermalAnalysisResult(latest);
       } catch (error) {
         console.error('Failed to save annotations:', error);
+        console.error('Error response:', error.response?.data);
+        console.error('Request payload that failed:', error.config?.data);
         const errorMessage = error.response?.data?.error || error.message || 'Unknown error';
         showError(`Could not save annotations: ${errorMessage}`);
       }
     },
-    [inspection?.id, inspectionImage?.id, showSuccess, showError, fetchImageAnalysisHistory, getLatestImageAnalysis]
+    [inspection?.id, inspectionImage?.id, inspection?.transformerId, showSuccess, showError, fetchImageAnalysisHistory, getLatestImageAnalysis]
   );
 
   const handleResetToAI = useCallback(async () => {
@@ -416,7 +469,7 @@ function InspectionDetailPage() {
       return;
     }
     try {
-      await axios.delete(`/api/inspections/${inspection.id}/annotations/${inspectionImage.id}`);
+      await axios.delete(`/inspections/${inspection.id}/annotations/${inspectionImage.id}`);
       showSuccess('Reset to AI annotations');
       // Refresh latest analysis so AI detections are shown
       await fetchImageAnalysisHistory();
@@ -500,7 +553,22 @@ function InspectionDetailPage() {
     }
   }, [id]);
 
-  // Note: Inspection image fetching is handled by the main fetchInspectionImage function above
+  // Add missing file selection handler
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    setSelectedFile(file);
+  };
+
+  // Add missing image modal functions
+  const openImageModal = (imageData) => {
+    setModalImageData(imageData);
+    setIsImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setIsImageModalOpen(false);
+    setModalImageData(null);
+  };
 
   const formatDate = dateString => {
     if (!dateString) return '-';
@@ -1671,8 +1739,8 @@ function InspectionDetailPage() {
                                       +{analysis.detections.length - 3} more
                                     </span>
                                   )}
-                                </div>
-                              </div>
+                                                               </div>
+                                                           </div>
                             )}
                           </div>
                           <div className='text-right text-sm text-gray-500 ml-4'>

@@ -3,19 +3,24 @@ spring:
     name: server-transformer
 
   datasource:
-    url: jdbc:postgresql://db.tpzemlslqgawxqsbvpqz.supabase.co:5432/postgres?user=postgres&password=3103Kirushanth
+    url: jdbc:postgresql://localhost:5432/transformer_db?user=postgres&password=pri-postgres
     username: postgres
-    password: 3103Kirushanth
+    password: pri-postgres
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update   # or 'validate' if schema already created
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
 
   flyway:
-    url: jdbc:postgresql://db.tpzemlslqgawxqsbvpqz.supabase.co:5432/postgres?user=postgres&password=3103Kirushanth
+    enabled: true
+    url: jdbc:postgresql://localhost:5432/transformer_db?user=postgres&password=pri-postgres
     username: postgres
-    password: 3103Kirushanth
+    password: pri-postgres
     locations: classpath:db/migration
     baseline-on-migrate: true
 
@@ -26,8 +31,6 @@ supabase:
     key: ${SUPABASE_SERVICE_KEY}
   s3:
     bucket: image-bucket
-
-
 
 # Thermal Analysis Configuration
 thermal:
@@ -42,16 +45,3 @@ thermal:
       default-sensitivity: 50
       default-image-size: 640
       max-concurrent-analyses: 5
-
-
-#cloud:
-#    aws:
-#        region:
-#          static: ap-southeast-1
-#        credentials:
-#          access-key: ${AWS_ACCESS_KEY}
-#          secret-key: ${AWS_SECRET_KEY}
-#
-#aws:
-#    bucket:
-#        name: power-grid

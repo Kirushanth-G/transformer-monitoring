@@ -1,5 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import UserIdModal from './UserIdModal';
+
+const LABEL_OPTIONS = [
+  'Loose Joint (Faulty)',
+  'Loose Joint (Potential)',
+  'Point Overload (Faulty)',
+  'Point Overload (Potential)',
+  'Full Wire Overload'
+];
 
 /**
  * AnnotateImageModal (finalized)
@@ -36,6 +45,8 @@ function AnnotateImageModal({
   const [startPoint, setStartPoint] = useState({ x: 0, y: 0 });
   const [currentDrawingBox, setCurrentDrawingBox] = useState(null);
   const [annotationHistory, setAnnotationHistory] = useState([]);
+  const [showUserIdModal, setShowUserIdModal] = useState(false);
+  const [pendingFeedback, setPendingFeedback] = useState(null);
 
   // Helper to create metadata entry
   const createAnnotationMetadata = (action, annotationData = {}, comment = "") => ({
@@ -82,41 +93,26 @@ function AnnotateImageModal({
 
   const getDeleteButtonCoords = (box) => ({ x: box.x + box.width + 16, y: box.y - 16 });
 
-  // Draw small arrow hints near the selected box (arrow glyphs)
-  const drawArrowHints = (ctx, box) => {
-    const centerX = box.x + box.width / 2;
-    const centerY = box.y + box.height / 2;
-    ctx.save();
-    ctx.font = "18px sans-serif";
-    ctx.globalAlpha = 0.85;
-    ctx.textAlign = "center";
-    ctx.fillStyle = "white";
-    // draw left-right and up-down arrows near center
-    ctx.fillText("↔", centerX, box.y - 10);
-    ctx.fillText("↕", box.x - 12, centerY);
-    // corner rotation hint (optional)
-    ctx.restore();
-  };
 
   // Draw resize handles (squares) and arrow glyphs on them
   const drawResizeHandles = (ctx, box) => {
-    const handleSize = 10;
+    // const handleSize = 10;
     ctx.save();
-    ctx.fillStyle = "#3b82f6"; // blue for selected handles
+    // ctx.fillStyle = "#3b82f6"; // blue for selected handles
     const handles = getResizeHandles(box);
-    Object.values(handles).forEach((pos) => {
-      ctx.fillRect(pos.x - handleSize / 2, pos.y - handleSize / 2, handleSize, handleSize);
-    });
+    // Object.values(handles).forEach((pos) => {
+    //   ctx.fillRect(pos.x - handleSize / 2, pos.y - handleSize / 2, handleSize, handleSize);
+    // });
 
     // draw tiny arrow glyphs over mid handles to indicate direction
-    ctx.fillStyle = "white";
-    ctx.font = "10px sans-serif";
+    // ctx.fillStyle = "white";
+    ctx.font = "8px times";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("↕", handles.top.x, handles.top.y); // top
-    ctx.fillText("↕", handles.bottom.x, handles.bottom.y); // bottom
-    ctx.fillText("↔", handles.left.x, handles.left.y); // left
-    ctx.fillText("↔", handles.right.x, handles.right.y); // right
+    // ctx.fillText("↕", handles.top.x, handles.top.y); // top
+    // ctx.fillText("↕", handles.bottom.x, handles.bottom.y); // bottom
+    // ctx.fillText("↔", handles.left.x, handles.left.y); // left
+    // ctx.fillText("↔", handles.right.x, handles.right.y); // right
     ctx.restore();
   };
 
@@ -125,18 +121,18 @@ function AnnotateImageModal({
     const { x, y } = getDeleteButtonCoords(box);
     const size = 22;
     ctx.save();
-    ctx.fillStyle = "#ef4444"; // red-500
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
+    ctx.fillStyle = "#ffff"; // red-500
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(x, y, size / 2, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "white";
-    ctx.font = "bold 16px sans-serif";
+    ctx.fillStyle = "red";
+    ctx.font = "16px sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("×", x, y + 1);
+    ctx.fillText("X", x, y + 1);
     ctx.restore();
   };
 
@@ -187,33 +183,56 @@ function AnnotateImageModal({
       const annCanvas = annotationCanvasRef.current;
       if (!imgCanvas || !annCanvas) return;
 
-      // set canvases to the natural image size (pixel-perfect)
+      // Calculate size to fit within available space (70vh height max)
+      const maxHeight = window.innerHeight * 0.7;
+      const maxWidth = window.innerWidth * 0.65; // Leave space for details
+      const scale = Math.min(
+        maxWidth / image.naturalWidth,
+        maxHeight / image.naturalHeight
+      );
+
+      // Set canvas sizes
+      const width = image.naturalWidth * scale;
+      const height = image.naturalHeight * scale;
+      
       imgCanvas.width = image.naturalWidth;
       imgCanvas.height = image.naturalHeight;
       annCanvas.width = image.naturalWidth;
       annCanvas.height = image.naturalHeight;
 
-      // CSS size: keep as auto so the container can scroll if needed
-      imgCanvas.style.width = `${image.naturalWidth}px`;
-      imgCanvas.style.height = `${image.naturalHeight}px`;
-      annCanvas.style.width = `${image.naturalWidth}px`;
-      annCanvas.style.height = `${image.naturalHeight}px`;
+      // Set display size
+      imgCanvas.style.width = `${width}px`;
+      imgCanvas.style.height = `${height}px`;
+      annCanvas.style.width = `${width}px`;
+      annCanvas.style.height = `${height}px`;
 
       // draw the image
       const ctx = imgCanvas.getContext("2d");
       ctx.clearRect(0, 0, imgCanvas.width, imgCanvas.height);
       ctx.drawImage(image, 0, 0);
 
-      // format initial annotations
-      const formatted = (initialAnnotations || []).map((anno) => ({
-        ...anno,
-        id: anno.id || uuidv4(),
-        status: "ai-detected",
-        originalDetection: true,
-        metadata: createAnnotationMetadata("ai-detected", anno),
-      }));
+      // format initial annotations (AI detections)
+      const aiTimestamp = thermalAnalysisResult?.analysisTimestamp || new Date().toISOString();
+      const aiUser = thermalAnalysisResult?.createdBy || "AI";
+      const formatted = (initialAnnotations || []).map((anno) => {
+        return {
+          ...anno,
+          id: anno.id || uuidv4(),
+          status: "ai-detected",
+          originalDetection: true,
+          createdAt: anno.createdAt || aiTimestamp,
+          createdBy: anno.createdBy || aiUser,
+          updatedAt: anno.updatedAt || aiTimestamp,
+          updatedBy: anno.updatedBy || aiUser,
+          metadata: {
+            ...createAnnotationMetadata("ai-detected", anno),
+            timestamp: aiTimestamp,
+            userId: aiUser,
+          },
+        };
+      });
       setBoxes(formatted);
-      setSelectedBoxId(formatted.length ? formatted[0].id : null);
+      setSelectedBoxId(null);
       setAnnotationHistory([]);
     };
     image.onerror = () => {
@@ -242,34 +261,45 @@ function AnnotateImageModal({
     boxes.forEach((box) => {
       if (box.status === "deleted") return;
       const isSelected = box.id === selectedBoxId;
+      // draw border
       if (isSelected) {
-        ctx.strokeStyle = "#3b82f6"; // blue border for selected
+        ctx.strokeStyle = "#1a5dc8ff";
         ctx.lineWidth = 3;
-      } else if (box.status === "user-added" || box.status === "user-edited") {
-        ctx.strokeStyle = "#16a34a"; // green - user modified
-        ctx.lineWidth = 2;
+      } else if (box.status === "user-added") {
+        ctx.strokeStyle = "#289305ff";
+        ctx.lineWidth = 3;
+      } else if (box.status === "user-edited") {
+        ctx.strokeStyle = "#7e37c1ff";
+        ctx.lineWidth = 3;
       } else {
-        ctx.strokeStyle = "#facc15"; // yellow - AI detected
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#d43216ff";
+        ctx.lineWidth = 3;
       }
       ctx.strokeRect(box.x, box.y, box.width, box.height);
 
-      // small label top-left inside box (optional)
-      if (box.label) {
+      // draw label above the box border (skip placeholder "user")
+      if (box.label && box.label !== "user") {
         ctx.save();
-        ctx.fillStyle = "rgba(0,0,0,0.6)";
-        ctx.fillRect(box.x, box.y - 18, Math.min(160, box.width + 6), 18);
-        ctx.fillStyle = "white";
         ctx.font = "12px sans-serif";
+        const padX = 6;
+        const padY = 2;
+        const text = box.label;
+        const textW = ctx.measureText(text).width;
+        const bgW = Math.min(220, Math.max(40, textW + padX * 2));
+        const bgH = 18;
+        const yTop = Math.max(2, box.y - bgH - 2); // keep within canvas
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(box.x, yTop, bgW, bgH);
+        ctx.fillStyle = "white";
         ctx.textBaseline = "top";
-        ctx.fillText(box.label, box.x + 4, box.y - 16);
+        ctx.fillText(text, box.x + padX, yTop + padY);
         ctx.restore();
       }
 
       if (isSelected) {
         drawResizeHandles(ctx, box);
         drawDeleteButton(ctx, box);
-        drawArrowHints(ctx, box);
+        // drawArrowHints(ctx, box);
       }
     });
 
@@ -302,7 +332,15 @@ function AnnotateImageModal({
       const toDelete = boxes.find((b) => b.id === selectedBoxId);
       if (toDelete) {
         const updated = boxes.map((b) =>
-          b.id === selectedBoxId ? { ...b, status: "deleted", metadata: createAnnotationMetadata("deleted", b) } : b
+          b.id === selectedBoxId
+            ? {
+                ...b,
+                status: "deleted",
+                updatedAt: new Date().toISOString(),
+                updatedBy: currentUserId,
+                metadata: createAnnotationMetadata("deleted", b),
+              }
+            : b
         );
         setBoxes(updated);
         logAnnotationAction("deleted", toDelete);
@@ -361,6 +399,8 @@ function AnnotateImageModal({
             x: b.x + dx,
             y: b.y + dy,
             status: b.status === "ai-detected" ? "user-edited" : b.status,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentUserId,
             metadata: b.status === "ai-detected" ? createAnnotationMetadata("edited", b) : b.metadata,
           };
           return moved;
@@ -408,6 +448,8 @@ function AnnotateImageModal({
           return {
             ...newBox,
             status: newBox.status === "ai-detected" ? "user-edited" : newBox.status,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentUserId,
             metadata: newBox.status === "ai-detected" ? createAnnotationMetadata("edited", newBox) : newBox.metadata,
           };
         })
@@ -431,14 +473,18 @@ function AnnotateImageModal({
         height: Math.abs(currentDrawingBox.height),
       };
       if (normalized.width > 5 && normalized.height > 5) {
+        const now = new Date().toISOString();
         const newBox = {
           ...normalized,
           id: uuidv4(),
           status: "user-added",
-          label: "user",
+          label: "User",
+          createdAt: now,
+          createdBy: currentUserId,
+          updatedAt: now,
+          updatedBy: currentUserId,
           metadata: createAnnotationMetadata("added", normalized),
         };
-        // immediate add without comment modal (you can add comment flow here if you want)
         setBoxes((p) => [...p, newBox]);
         logAnnotationAction("added", newBox);
         setSelectedBoxId(newBox.id);
@@ -477,15 +523,33 @@ function AnnotateImageModal({
 
   // Clear and reset to original AI detections
   const handleResetToAi = () => {
-    const formatted = (initialAnnotations || []).map((anno) => ({
-      ...anno,
-      id: anno.id || uuidv4(),
-      status: "ai-detected",
-      originalDetection: true,
-      metadata: createAnnotationMetadata("ai-detected", anno),
-    }));
+    const aiTimestamp = thermalAnalysisResult?.analysisTimestamp || new Date().toISOString();
+    const aiUser = thermalAnalysisResult?.createdBy || "AI";
+    const formatted = (initialAnnotations || []).map((anno) => {
+      return {
+        ...anno,
+        id: anno.id || uuidv4(),
+        status: "ai-detected",
+        originalDetection: true,
+        createdAt: anno.createdAt || aiTimestamp,
+        createdBy: anno.createdBy || aiUser,
+        updatedAt: anno.updatedAt || aiTimestamp,
+        updatedBy: anno.updatedBy || aiUser,
+        metadata: {
+          ...createAnnotationMetadata("ai-detected", anno),
+          timestamp: aiTimestamp,
+          userId: aiUser,
+        },
+      };
+    });
     setBoxes(formatted);
-    setSelectedBoxId(formatted.length ? formatted[0].id : null);
+    // Always auto-select the first restored annotation
+    setSelectedBoxId(null);
+    // Clear any ongoing interactions/drawing
+    setInteraction({ type: "none" });
+    setCurrentDrawingBox(null);
+    setStartPoint({ x: 0, y: 0 });
+
     logAnnotationAction("reset", { message: "Reset to AI detections" });
   };
 
@@ -493,34 +557,112 @@ function AnnotateImageModal({
   const deleteSelectedBox = (id) => {
     const toDelete = boxes.find((b) => b.id === id);
     if (!toDelete) return;
-    setBoxes((prev) => prev.map((b) => (b.id === id ? { ...b, status: "deleted", metadata: createAnnotationMetadata("deleted", b) } : b)));
+    setBoxes((prev) =>
+      prev.map((b) =>
+        b.id === id
+          ? {
+              ...b,
+              status: "deleted",
+              updatedAt: new Date().toISOString(),
+              updatedBy: currentUserId,
+              metadata: createAnnotationMetadata("deleted", b),
+            }
+          : b
+      )
+    );
     logAnnotationAction("deleted", toDelete);
     setSelectedBoxId(null);
   };
 
-  // Save handler: composes feedback and calls onSave
+  // Modify handleSave to show user ID modal first
   const handleSave = () => {
+    // Format boxes for saving, ensuring all required fields are present
+    const formattedBoxes = boxes.map(box => ({
+      id: box.id,
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      label: box.label || null,
+      status: box.status,
+      createdAt: box.createdAt,
+      createdBy: box.createdBy,
+      updatedAt: box.updatedAt,
+      updatedBy: box.updatedBy,
+      confidence: box.confidence || null,
+      metadata: box.metadata
+    }));
+
     const feedback = {
-      added: boxes.filter((b) => b.status === "user-added"),
-      edited: boxes.filter((b) => b.status === "user-edited"),
-      deleted: boxes.filter((b) => b.status === "deleted"),
+      annotations: formattedBoxes, // All annotations including modified ones
+      added: formattedBoxes.filter(b => b.status === "user-added"),
+      edited: formattedBoxes.filter(b => b.status === "user-edited"),
+      deleted: formattedBoxes.filter(b => b.status === "deleted"),
       originalDetections: initialAnnotations,
+      unchangedAiDetections: formattedBoxes.filter(b => b.status === "ai-detected"),
       history: annotationHistory,
       metadata: {
         userId: currentUserId,
         timestamp: new Date().toISOString(),
         imageId,
         transformerId,
-        totalAnnotations: boxes.filter((b) => b.status !== "deleted").length,
-        userModifications: boxes.filter((b) => b.status !== "ai-detected").length,
-      },
+        totalAnnotations: formattedBoxes.filter(b => b.status !== "deleted").length,
+        userModifications: formattedBoxes.filter(b => b.status !== "ai-detected").length,
+      }
     };
-    try {
-      if (typeof onSave === "function") onSave(feedback);
-    } catch (err) {
-      console.error("onSave threw:", err);
+
+    setPendingFeedback(feedback);
+    setShowUserIdModal(true);
+  };
+
+  // Modify handleUserIdSubmit to ensure the feedback includes the userId
+  const handleUserIdSubmit = (userId) => {
+    if (pendingFeedback && typeof onSave === "function") {
+      const updatedFeedback = {
+        ...pendingFeedback,
+        metadata: {
+          ...pendingFeedback.metadata,
+          userId,
+        },
+        // Update all annotations with the confirmed userId
+        annotations: pendingFeedback.annotations.map(anno => ({
+          ...anno,
+          updatedBy: userId,
+          metadata: {
+            ...anno.metadata,
+            userId
+          }
+        }))
+      };
+      
+      try {
+        onSave(updatedFeedback);
+      } catch (err) {
+        console.error("Error saving annotations:", err);
+      }
+      setShowUserIdModal(false);
+      setPendingFeedback(null);
+      onClose();
     }
-    onClose();
+  };
+
+  const handleLabelChange = (id, newLabel) => {
+    setBoxes(prev =>
+      prev.map(b => {
+        if (b.id !== id) return b;
+        const updated = {
+          ...b,
+          label: newLabel || null,
+          status: b.status === "ai-detected" ? "user-edited" : b.status,
+          updatedAt: new Date().toISOString(),
+          updatedBy: currentUserId,
+          metadata: createAnnotationMetadata("edited", { ...b, label: newLabel || null }),
+        };
+        return updated;
+      })
+    );
+    const changed = boxes.find(b => b.id === id);
+    logAnnotationAction("edited", { ...(changed || {}), label: newLabel || null });
   };
 
   // Keyboard fine adjustments for selected box
@@ -540,6 +682,8 @@ function AnnotateImageModal({
             if (e.key === "ArrowDown") nb.y += step;
             nb.status = nb.status === "ai-detected" ? "user-edited" : nb.status;
             nb.metadata = nb.metadata || createAnnotationMetadata("edited", nb);
+            nb.updatedAt = new Date().toISOString();
+            nb.updatedBy = currentUserId;
             return nb;
           })
         );
@@ -559,46 +703,107 @@ function AnnotateImageModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg p-4 w-[95vw] max-w-[1400px] max-h-[92vh] flex">
-        {/* LEFT: Canvas area */}
-        <div className="flex-1 pr-4 overflow-auto">
+        {/* LEFT: Details Panel */}
+        <div className="w-72 bg-white border-r px-4 py-3 flex flex-col">
+          <h3 className="text-lg font-semibold mb-2">Selected Annotation</h3>
+          {selectedBox ? (
+            <>
+              <div className="text-sm text-gray-700 mb-2 space-y-2">
+                <p><strong>Status:</strong> {selectedBox.status.replace("-", " ")}</p>
+                <p><strong>Position:</strong> ({Math.round(selectedBox.x)}, {Math.round(selectedBox.y)})</p>
+                <p><strong>Size:</strong> {Math.round(selectedBox.width)} X {Math.round(selectedBox.height)}</p>
+                <p>
+                  <strong>Created At:</strong>{" "}
+                  {selectedBox.createdAt ? new Date(selectedBox.createdAt).toLocaleString() : "N/A"}{" "}
+                </p>
+                <p>
+                  <strong>Created By:</strong>{" "}
+                  {selectedBox.createdBy || "N/A"}
+                </p>
+                <p>
+                  <strong>Last Modified At:</strong>{" "}
+                  {selectedBox.updatedAt ? new Date(selectedBox.updatedAt).toLocaleString() : "N/A"}{" "}
+                </p>
+                <p>
+                  <strong>Last Modified By:</strong>{" "}
+                  {selectedBox.updatedBy || "N/A"}
+                </p>
+
+                {/* Label Dropdown */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fault Type
+                  </label>
+                  <select
+                    value={selectedBox.label === 'user' ? '' : (selectedBox.label || '')}
+                    onChange={(e) => handleLabelChange(selectedBox.id, e.target.value)}
+                    className="w-full px-2 py-1 border rounded-md text-sm bg-white"
+                  >
+                    <option value="">Select fault type...</option>
+                    {LABEL_OPTIONS.map(label => (
+                      <option key={label} value={label}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-500 mt-4">
+                Use arrow keys to move selected box. <br />
+                Hold Shift + arrow for larger steps.
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-gray-400 italic">No box selected</div>
+          )}
+
+          {/* Delete at bottom of the left panel */}
+          <div className="mt-auto pt-3">
+            <button
+              onClick={() => selectedBox && deleteSelectedBox(selectedBox.id)}
+              disabled={!selectedBox}
+              className={`w-full px-3 py-2 rounded-md text-sm ${selectedBox ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+            >
+              Delete Annotation
+            </button>
+          </div>
+        </div>
+
+        {/* RIGHT: Canvas area */}
+        <div className="flex-1 pl-4">
           {/* Header */}
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center space-x-4 text-sm text-gray-600">
-              <span>Click and drag to draw. Click a box to select, move, resize, or delete.</span>
+              {/* <span>Click and drag to draw. Click a box to select.</span> */}
 
               <div className="flex items-center space-x-2">
-                <span className="w-4 h-4 inline-block" style={{ backgroundColor: "#facc15" }}></span>
+                <span className="w-4 h-4 inline-block" style={{ backgroundColor: "#d43216ff" }}></span>
                 <span className="text-xs">AI Detected</span>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="w-4 h-4 inline-block" style={{ backgroundColor: "#16a34a" }}></span>
-                <span className="text-xs">User Modified</span>
+                <span className="w-4 h-4 inline-block" style={{ backgroundColor: "#7e37c1ff" }}></span>
+                <span className="text-xs">User Edited</span>
               </div>
               <div className="flex items-center space-x-2">
-                <span
-                  className="w-4 h-4 inline-block border-2"
-                  style={{ borderColor: "#3b82f6", backgroundColor: "transparent" }}
-                ></span>
+                <span className="w-4 h-4 inline-block" style={{ backgroundColor: "#289305ff" }}></span>
+                <span className="text-xs">User Added</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="w-4 h-4 inline-block" style={{ backgroundColor: "#1a5dc8ff" }}></span>
                 <span className="text-xs">Selected</span>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handleResetToAi}
-                className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 text-sm"
-              >
-                Reset to AI Detections
-              </button>
-              <button onClick={onClose} className="px-3 py-1 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                Close
-              </button>
-            </div>
+            <button
+              onClick={handleResetToAi}
+              className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 text-s font-semibold"
+            >
+              Reset to AI
+            </button>
           </div>
 
-          {/* Canvas container - keep actual pixel size, allow scrolling */}
-          <div className="bg-gray-100 rounded-md flex items-center justify-center" style={{ minHeight: "55vh" }}>
-            <div className="relative" style={{ width: "fit-content" }}>
+          {/* Canvas container - centered, not scrollable */}
+          <div className="bg-gray-100 rounded-md flex items-center justify-center">
+            <div className="relative">
               <canvas ref={imageCanvasRef} className="block rounded-md shadow-md" />
               <canvas
                 ref={annotationCanvasRef}
@@ -615,90 +820,26 @@ function AnnotateImageModal({
           {/* Footer */}
           <div className="mt-3 flex justify-between items-center">
             <div className="text-sm text-gray-600">
-              User: {currentUserId} | Modifications: {boxes.filter((b) => b.status !== "ai-detected" && b.status !== "deleted").length} | Total Annotations:{" "}
-              {boxes.filter((b) => b.status !== "deleted").length}
+              Total Annotations: {boxes.filter((b) => b.status !== "deleted").length}
             </div>
             <div className="flex space-x-3">
               <button onClick={onClose} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
                 Cancel
               </button>
               <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                Save Annotations
+                Save
               </button>
             </div>
           </div>
         </div>
-
-        {/* RIGHT: Permanent details panel */}
-        <div className="w-80 bg-white border-l px-4 py-3">
-          <h3 className="text-lg font-semibold mb-2">Selected Annotation</h3>
-          {selectedBox ? (
-            <>
-              <div className="text-sm text-gray-700 mb-2">
-                <p>
-                  <strong>Status:</strong> {selectedBox.status.replace("-", " ")}
-                </p>
-                <p>
-                  <strong>Position:</strong> ({Math.round(selectedBox.x)}, {Math.round(selectedBox.y)})
-                </p>
-                <p>
-                  <strong>Size:</strong> {Math.round(selectedBox.width)} × {Math.round(selectedBox.height)}
-                </p>
-                {selectedBox.label && (
-                  <p>
-                    <strong>Label:</strong> {selectedBox.label}
-                  </p>
-                )}
-                {selectedBox.comment && (
-                  <p className="mt-2 text-sm text-gray-600">
-                    <em>Comment:</em> {selectedBox.comment}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col space-y-2">
-                <button
-                  onClick={() => deleteSelectedBox(selectedBox.id)}
-                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                >
-                  Delete Annotation
-                </button>
-
-                <button
-                  onClick={() => {
-                    // Quick nudge example: increase width by 10
-                    setBoxes((prev) => prev.map((b) => (b.id === selectedBox.id ? { ...b, width: b.width + 10 } : b)));
-                  }}
-                  className="px-3 py-2 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                  Nudge Width +10
-                </button>
-
-                <div className="text-xs text-gray-500 mt-2">
-                  Use arrow keys to move selected box. Hold Shift + arrow for larger steps.
-                </div>
-              </div>
-
-              <div className="mt-4 text-xs text-gray-500">
-                <div className="flex items-center space-x-2">
-                  <span className="w-3 h-3 inline-block" style={{ backgroundColor: "#facc15" }}></span>
-                  <span>AI Detected</span>
-                </div>
-                <div className="flex items-center space-x-2 mt-1">
-                  <span className="w-3 h-3 inline-block" style={{ backgroundColor: "#16a34a" }}></span>
-                  <span>User Modified</span>
-                </div>
-                <div className="flex items-center space-x-2 mt-1">
-                  <span style={{ border: "2px solid #3b82f6", width: 12, height: 12, display: "inline-block" }}></span>
-                  <span>Selected</span>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="text-sm text-gray-400 italic">No box selected</div>
-          )}
-        </div>
       </div>
+
+      {/* Add UserIdModal */}
+      <UserIdModal
+        isOpen={showUserIdModal}
+        onClose={() => setShowUserIdModal(false)}
+        onSubmit={handleUserIdSubmit}
+      />
     </div>
   );
 }

@@ -1,0 +1,33 @@
+services:
+  # Python CV Service
+  cv-service:
+    build: ./cv_service
+    network_mode: "host"
+
+  # Java Backend
+  backend:
+    build: ./server-transformer
+    environment:
+      # These pass your local secrets to the container
+      - SUPABASE_ACCESS_KEY=${SUPABASE_ACCESS_KEY}
+      - SUPABASE_SECRET_KEY=${SUPABASE_SECRET_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      # Backend uses localhost since it's on host network with cv-service
+      - THERMAL_ANALYSIS_URL=http://localhost:8000
+    depends_on:
+      - cv-service
+    network_mode: "host"
+
+  # React Frontend
+  frontend:
+    build: ./client-side
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

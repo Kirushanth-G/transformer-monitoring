@@ -39,7 +39,7 @@ class ThermalAnalysisRequest(BaseModel):
     processing_device: int = -1  # -1 for CPU, 0+ for GPU
     input_image_size: int = 640
     use_half_precision: bool = False
-    web_response_format: bool = True
+    web_response_format: bool = False
     sensitivity_percentage: Optional[int] = None  # 0-100 sensitivity control
     config_overrides: Optional[Dict[str, Any]] = None
 

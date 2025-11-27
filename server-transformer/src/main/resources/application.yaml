@@ -33,7 +33,7 @@ supabase:
 thermal:
   analysis:
     api:
-      url: http://localhost:8000  # FastAPI service URL
+      url: ${THERMAL_ANALYSIS_URL:http://localhost:8000}  # FastAPI service URL
       timeout: 300000             # 5 minutes timeout
       retry:
         max-attempts: 3

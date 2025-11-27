@@ -130,13 +130,8 @@ public class ThermalAnalysisService {
                 logger.warn("No detections found in FastAPI response or detections list is null/empty");
             }
 
-            // Save configuration overrides if any
-            if (request.getConfigOverrides() != null && !request.getConfigOverrides().isEmpty()) {
-                List<ThermalAnalysisConfig> configs = request.getConfigOverrides().entrySet().stream()
-                        .map(entry -> createThermalConfig(savedAnalysis, entry.getKey(), entry.getValue().toString()))
-                        .collect(Collectors.toList());
-                savedAnalysis.setConfigs(configs);
-            }
+            // Note: Config overrides are now stored directly in thermal_analyses columns (sensitivity_percentage, etc.)
+            // The thermal_analysis_configs table has been removed in favor of direct column storage
 
             logger.info("Thermal analysis completed successfully. Analysis ID: {}", savedAnalysis.getId());
             return mapToResponse(savedAnalysis, fastApiResponse.getAnnotatedImageUrl());
@@ -253,6 +248,25 @@ public class ThermalAnalysisService {
     public void deleteThermalAnalysis(Long id) {
         thermalAnalysisRepository.deleteById(id);
         logger.info("Deleted thermal analysis with ID: {}", id);
+    }
+
+    /**
+     * Verify a thermal analysis (mark as human-reviewed and approved)
+     */
+    public ThermalAnalysisResponse verifyAnalysis(Long id, String reviewedBy) {
+        logger.info("Verifying thermal analysis ID: {} by {}", id, reviewedBy);
+
+        ThermalAnalysis analysis = thermalAnalysisRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Thermal analysis not found with ID: " + id));
+
+        analysis.setReviewStatus(ThermalAnalysis.ReviewStatus.VERIFIED);
+        analysis.setReviewedBy(reviewedBy);
+        analysis.setReviewedAt(LocalDateTime.now());
+
+        ThermalAnalysis saved = thermalAnalysisRepository.save(analysis);
+        logger.info("Analysis ID {} verified by {}", id, reviewedBy);
+
+        return mapToResponse(saved, null);
     }
 
     // Private helper methods
@@ -392,6 +406,19 @@ public class ThermalAnalysisService {
         analysis.setApiVersion(fastApiResponse.getApiVersion());
         analysis.setCreatedBy(request.getCreatedBy());
 
+        // Save image dimensions from FastAPI response for frontend coordinate calculations
+        if (fastApiResponse.getImageDimensions() != null) {
+            analysis.setOriginalWidth(fastApiResponse.getImageDimensions().getWidth());
+            analysis.setOriginalHeight(fastApiResponse.getImageDimensions().getHeight());
+            logger.info("Saved image dimensions: {}x{}",
+                analysis.getOriginalWidth(), analysis.getOriginalHeight());
+        } else {
+            logger.warn("No image dimensions in FastAPI response. Frontend may have issues with coordinate calculations.");
+        }
+
+        // Set default review status to PENDING (human needs to review AI results)
+        analysis.setReviewStatus(ThermalAnalysis.ReviewStatus.PENDING);
+
         // Set equipment if provided, or derive from inspection image
         if (request.getEquipmentId() != null) {
             Transformer equipment = transformerRepository.findById(request.getEquipmentId())
@@ -449,7 +476,11 @@ public class ThermalAnalysisService {
             anomaly.setTemperatureCelsius(BigDecimal.valueOf(detection.getTemperatureCelsius()));
         }
 
-        logger.debug("Created anomaly detection: ID will be assigned, analysis_id={}, label={}, confidence={}",
+        // FR3.3: Set annotation status to UNVERIFIED for AI detections (awaiting human review)
+        anomaly.setAnnotationStatus(AnomalyDetection.AnnotationStatus.UNVERIFIED);
+        anomaly.setDetectionSource(AnomalyDetection.DetectionSource.AI);
+
+        logger.debug("Created anomaly detection: ID will be assigned, analysis_id={}, label={}, confidence={}, status=UNVERIFIED",
             analysis.getId(), anomaly.getLabel(), anomaly.getConfidence());
 
         return anomaly;
@@ -477,13 +508,6 @@ public class ThermalAnalysisService {
         }
     }
 
-    private ThermalAnalysisConfig createThermalConfig(ThermalAnalysis analysis, String key, String value) {
-        ThermalAnalysisConfig config = new ThermalAnalysisConfig();
-        config.setAnalysis(analysis);
-        config.setConfigKey(key);
-        config.setConfigValue(value);
-        return config;
-    }
 
     private ThermalAnalysis.AssessmentType parseAssessmentType(String assessment) {
         if (assessment == null) return ThermalAnalysis.AssessmentType.NORMAL;
@@ -516,6 +540,15 @@ public class ThermalAnalysisService {
         response.setCreatedBy(analysis.getCreatedBy());
         response.setAnnotatedImageUrl(annotatedImageUrl);
 
+        // Image dimensions for frontend coordinate calculations
+        response.setOriginalWidth(analysis.getOriginalWidth());
+        response.setOriginalHeight(analysis.getOriginalHeight());
+
+        // Review status tracking
+        response.setReviewStatus(analysis.getReviewStatus());
+        response.setReviewedBy(analysis.getReviewedBy());
+        response.setReviewedAt(analysis.getReviewedAt());
+
         if (analysis.getEquipment() != null) {
             response.setEquipmentId(analysis.getEquipment().getId());
         }
@@ -547,6 +580,15 @@ public class ThermalAnalysisService {
         dto.setIsCritical(detection.getIsCritical());
         dto.setSeverityLevel(detection.getSeverityLevel());
         dto.setTemperatureCelsius(detection.getTemperatureCelsius());
+
+        // Human-in-the-loop tracking fields (FR3.3)
+        dto.setDetectionSource(detection.getDetectionSource());
+        dto.setOriginalAiPrediction(detection.getOriginalAiPrediction());
+        dto.setAnnotationStatus(detection.getAnnotationStatus());
+        dto.setUserComments(detection.getUserComments());
+        dto.setModifiedBy(detection.getModifiedBy());
+        dto.setModifiedAt(detection.getModifiedAt());
+
         return dto;
     }
 

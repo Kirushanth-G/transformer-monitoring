@@ -218,6 +218,29 @@ public class ThermalAnalysisController {
         }
     }
 
+    @Operation(summary = "Verify thermal analysis",
+               description = "Mark a thermal analysis as human-reviewed and verified")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Analysis verified successfully"),
+            @ApiResponse(responseCode = "404", description = "Analysis not found")
+    })
+    @PutMapping("/{id}/verify")
+    public ResponseEntity<ThermalAnalysisResponse> verifyAnalysis(
+            @Parameter(description = "Analysis ID") @PathVariable Long id,
+            @Parameter(description = "User who verified") @RequestParam String reviewedBy) {
+        try {
+            logger.info("Verifying thermal analysis ID: {} by {}", id, reviewedBy);
+            ThermalAnalysisResponse response = thermalAnalysisService.verifyAnalysis(id, reviewedBy);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            logger.error("Analysis not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            logger.error("Error verifying thermal analysis with ID: {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @Operation(summary = "Check FastAPI service health", description = "Check if the thermal analysis service is available")
     @GetMapping("/service/health")
     public ResponseEntity<String> checkServiceHealth() {

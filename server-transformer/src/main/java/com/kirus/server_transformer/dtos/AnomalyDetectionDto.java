@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,4 +25,19 @@ public class AnomalyDetectionDto {
     private Boolean isCritical;
     private AnomalyDetection.SeverityLevel severityLevel;
     private BigDecimal temperatureCelsius;
+
+    // Human-in-the-loop tracking
+    private AnomalyDetection.DetectionSource detectionSource;
+
+    // FR3.3: Original AI prediction before human edits
+    private String originalAiPrediction; // JSON: {"x": 10, "y": 10, "width": 50, "height": 50}
+
+    // FR3.1: Rich annotation status (replaces isFalsePositive)
+    private AnomalyDetection.AnnotationStatus annotationStatus;
+
+    // FR3.1: User comments/feedback
+    private String userComments;
+
+    private String modifiedBy;
+    private LocalDateTime modifiedAt;
 }

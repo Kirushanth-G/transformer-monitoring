@@ -70,6 +70,24 @@ public class ThermalAnalysis {
     @JoinColumn(name = "inspection_id")
     private Inspection inspection;
 
+    // Image dimensions for frontend coordinate calculations
+    @Column(name = "original_width")
+    private Integer originalWidth;
+
+    @Column(name = "original_height")
+    private Integer originalHeight;
+
+    // Human review tracking
+    @Enumerated(EnumType.STRING)
+    @Column(name = "review_status", length = 20)
+    private ReviewStatus reviewStatus = ReviewStatus.PENDING;
+
+    @Column(name = "reviewed_by", length = 100)
+    private String reviewedBy;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
     // Explicit setters to handle code that may pass either type
     public void setBaselineImage(TransformImage transformImage) {
         this.baselineImage = transformImage;
@@ -96,10 +114,11 @@ public class ThermalAnalysis {
     @OneToMany(mappedBy = "analysis", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AnomalyDetection> detections = new ArrayList<>();
 
-    @OneToMany(mappedBy = "analysis", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ThermalAnalysisConfig> configs = new ArrayList<>();
-
     public enum AssessmentType {
         NORMAL, WARNING, CRITICAL
+    }
+
+    public enum ReviewStatus {
+        PENDING, VERIFIED
     }
 }

@@ -28,6 +28,16 @@ public class ThermalAnalysisResponse {
     private String apiVersion;
     private Long equipmentId;
     private String createdBy;
+
+    // Image dimensions for frontend coordinate calculations
+    private Integer originalWidth;
+    private Integer originalHeight;
+
+    // Review tracking
+    private ThermalAnalysis.ReviewStatus reviewStatus;
+    private String reviewedBy;
+    private LocalDateTime reviewedAt;
+
     private List<AnomalyDetectionDto> detections;
     private Integer totalDetections;
     private Integer criticalDetections;

@@ -7,6 +7,7 @@ import NotificationManager from '../components/NotificationManager';
 import InspectionImageDisplay from '../components/InspectionImageDisplay';
 import ThermalAnalysisForm from '../components/ThermalAnalysisForm';
 import ThermalAnalysisResults from '../components/ThermalAnalysisResults';
+import ThermalImageEditor from '../components/ThermalImageEditor';
 import { useNotifications } from '../hooks/useNotifications';
 import { displayValue, isNullValue } from '../utils/displayHelpers';
 import { thermalApi } from '../services/thermalApi';
@@ -40,6 +41,10 @@ function InspectionDetailPage() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [imageAnalysisHistory, setImageAnalysisHistory] = useState([]);
   const [loadingImageHistory, setLoadingImageHistory] = useState(false);
+  
+  // Thermal annotation editor state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   
   // Inspection image state
   const [inspectionImage, setInspectionImage] = useState(null);
@@ -117,6 +122,57 @@ function InspectionDetailPage() {
     // Refresh both analysis histories after new analysis
     fetchAnalysisHistory();
     fetchImageAnalysisHistory();
+  };
+
+  // Handle complete review and verify analysis
+  const handleVerifyAnalysis = async () => {
+    if (!thermalAnalysisResult?.id) {
+      showError('No analysis to verify');
+      return;
+    }
+
+    if (!window.confirm('Are you sure you want to complete this review and verify the analysis? This will mark all detections as reviewed.')) {
+      return;
+    }
+
+    try {
+      setIsVerifying(true);
+      const currentUser = 'inspector@company.com'; // TODO: Get from auth context
+      
+      await thermalApi.verifyAnalysis(thermalAnalysisResult.id, currentUser);
+      
+      // Update local state
+      setThermalAnalysisResult(prev => ({
+        ...prev,
+        reviewStatus: 'VERIFIED',
+        reviewedBy: currentUser,
+        reviewedAt: new Date().toISOString()
+      }));
+      
+      setIsEditMode(false); // Exit edit mode
+      showSuccess('Analysis verified successfully! Review is complete.');
+      
+      // Refresh histories
+      fetchAnalysisHistory();
+      fetchImageAnalysisHistory();
+    } catch (error) {
+      console.error('Error verifying analysis:', error);
+      showError(error.message || 'Failed to verify analysis');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Handle detections change from editor
+  const handleDetectionsChange = (updatedDetections) => {
+    // Update the detections in the analysis result
+    setThermalAnalysisResult(prev => ({
+      ...prev,
+      detections: updatedDetections,
+      totalDetections: updatedDetections.length,
+      criticalDetections: updatedDetections.filter(d => d.severityLevel === 'HIGH' || d.isCritical).length,
+      warningDetections: updatedDetections.filter(d => d.severityLevel === 'MEDIUM').length
+    }));
   };
 
   // Fetch transformer details by transformerId (code)
@@ -772,28 +828,84 @@ function InspectionDetailPage() {
                       Thermal API {serviceHealth === 'healthy' ? 'Ready' : 'Not Available'}
                     </div>
                   )}
-                  
-                  {/* Annotation Tools */}
-                  <div className='flex items-center space-x-1 text-gray-500'>
-                    <span className='text-xs'>Annotation Tools</span>
-                    <button className='p-1 hover:bg-gray-100 rounded'>
-                      <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z' />
-                      </svg>
-                    </button>
-                    <button className='p-1 hover:bg-gray-100 rounded'>
-                      <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
-                      </svg>
-                    </button>
-                    <button className='p-1 hover:bg-gray-100 rounded'>
-                      <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' />
-                      </svg>
-                    </button>
-                  </div>
                 </div>
               </div>
+
+              {/* Edit/View Mode Controls - Only show when analysis result exists */}
+              {thermalAnalysisResult && (
+                <div className='mb-4 pb-4 border-b border-gray-200'>
+                  <div className='flex flex-wrap gap-3 items-center justify-between'>
+                    <div className='flex gap-2 items-center'>
+                      <button
+                        onClick={() => setIsEditMode(!isEditMode)}
+                        disabled={thermalAnalysisResult.reviewStatus === 'VERIFIED'}
+                        className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                          isEditMode
+                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        } ${thermalAnalysisResult.reviewStatus === 'VERIFIED' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        {isEditMode ? '✏️ Edit Mode Active' : '👁️ View Mode'}
+                      </button>
+                      
+                      {/* Verify Button - Only show in edit mode and if not already verified */}
+                      {isEditMode && thermalAnalysisResult.reviewStatus !== 'VERIFIED' && (
+                        <button
+                          onClick={handleVerifyAnalysis}
+                          disabled={isVerifying}
+                          className='px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 font-medium'
+                        >
+                          {isVerifying ? '⏳ Verifying...' : '✓ Complete Review & Verify'}
+                        </button>
+                      )}
+                      
+                      {/* Verified Badge */}
+                      {thermalAnalysisResult.reviewStatus === 'VERIFIED' && (
+                        <div className='px-4 py-2 bg-green-100 text-green-800 rounded-md font-medium flex items-center gap-2'>
+                          <span className='text-lg'>✓</span>
+                          <div>
+                            <div className='font-bold'>Verified</div>
+                            {thermalAnalysisResult.reviewedBy && (
+                              <div className='text-xs'>by {thermalAnalysisResult.reviewedBy}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className='flex gap-2'>
+                      <button
+                        onClick={() => {
+                          setThermalAnalysisResult(null);
+                          setShowThermalAnalysis(true);
+                          setIsEditMode(false);
+                        }}
+                        className='px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors'
+                      >
+                        🔄 Analyze Again
+                      </button>
+                      <button
+                        onClick={() => {
+                          setThermalAnalysisResult(null);
+                          setIsEditMode(false);
+                        }}
+                        className='px-3 py-2 text-sm bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors'
+                      >
+                        ✕ Clear Results
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Edit Mode Instructions */}
+                  {isEditMode && (
+                    <div className='mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800'>
+                      <strong>📝 Edit Mode Active:</strong> Click and drag on the right image to draw new detections. 
+                      Click boxes to select, drag to move, use corner handles to resize. 
+                      Hover over boxes to see confirm (✓) and delete (🗑️) buttons.
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Image Comparison Grid */}
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6'>
@@ -878,7 +990,7 @@ function InspectionDetailPage() {
                       thermalAnalysisResult.overallAssessment === 'WARNING' ? 'bg-yellow-600' : 'bg-green-600'
                     : 'bg-gray-600'
                   }`}>
-                    <span>Current Analysis</span>
+                    <span>Current Analysis {isEditMode && '(Edit Mode)'}</span>
                     {thermalAnalysisResult && (
                       <span className={`px-2 py-1 rounded text-xs font-bold ${
                         thermalAnalysisResult.overallAssessment === 'CRITICAL' ? 'bg-red-700' :
@@ -892,120 +1004,136 @@ function InspectionDetailPage() {
                   
                   <div className='aspect-video bg-gray-100 relative'>
                     {thermalAnalysisResult && inspectionImage ? (
-                      <div className='relative w-full h-full'>
-                        {/* Display the actual thermal image */}
-                        <img 
-                          src={thermalAnalysisResult.maintenanceImageUrl || inspectionImage.imageUrl} 
-                          alt="Thermal Analysis"
-                          className='w-full h-full object-contain'
-                          onError={(e) => {
-                            // Fallback to original image if thermal image fails
-                            e.target.src = inspectionImage.imageUrl;
-                          }}
-                        />
-                        
-                        {/* Detection overlays */}
-                        {thermalAnalysisResult.detections?.map((detection, index) => {
-                          // Improved positioning calculation for object-contain images
-                          const calculatePosition = () => {
-                            const imageElement = document.querySelector('img[alt="Thermal Analysis"]');
-                            if (!imageElement) {
-                              // Fallback positioning
-                              return {
-                                left: `${(detection.x / 640) * 100}%`,
-                                top: `${(detection.y / 480) * 100}%`,
-                                width: `${(detection.width / 640) * 100}%`,
-                                height: `${(detection.height / 480) * 100}%`,
-                              };
-                            }
-
-                            // Get container and image dimensions
-                            const container = imageElement.parentElement;
-                            const containerRect = container.getBoundingClientRect();
-                            const naturalWidth = imageElement.naturalWidth || 640;
-                            const naturalHeight = imageElement.naturalHeight || 480;
-                            
-                            // Calculate how the image is scaled within its container (object-contain)
-                            const containerAspect = containerRect.width / containerRect.height;
-                            const imageAspect = naturalWidth / naturalHeight;
-                            
-                            let displayedWidth, displayedHeight, offsetX, offsetY;
-                            
-                            if (containerAspect > imageAspect) {
-                              // Container is wider than image aspect ratio
-                              displayedHeight = containerRect.height;
-                              displayedWidth = displayedHeight * imageAspect;
-                              offsetY = 0;
-                              offsetX = (containerRect.width - displayedWidth) / 2;
-                            } else {
-                              // Container is taller than image aspect ratio
-                              displayedWidth = containerRect.width;
-                              displayedHeight = displayedWidth / imageAspect;
-                              offsetX = 0;
-                              offsetY = (containerRect.height - displayedHeight) / 2;
-                            }
-                            
-                            // Scale detection coordinates to displayed image size
-                            const scaleX = displayedWidth / naturalWidth;
-                            const scaleY = displayedHeight / naturalHeight;
-                            
-                            // Calculate final position as percentage of container
-                            const left = ((detection.x * scaleX + offsetX) / containerRect.width) * 100;
-                            const top = ((detection.y * scaleY + offsetY) / containerRect.height) * 100;
-                            const width = (detection.width * scaleX / containerRect.width) * 100;
-                            const height = (detection.height * scaleY / containerRect.height) * 100;
-                            
-                            return {
-                              left: `${left}%`,
-                              top: `${top}%`,
-                              width: `${width}%`,
-                              height: `${height}%`,
-                            };
-                          };
+                      isEditMode ? (
+                        /* EDIT MODE: Interactive ThermalImageEditor */
+                        <div className='w-full h-full'>
+                          <ThermalImageEditor
+                            analysis={thermalAnalysisResult}
+                            imageUrl={thermalAnalysisResult.maintenanceImageUrl || inspectionImage.imageUrl}
+                            currentUser='inspector@company.com'
+                            isEditing={true}
+                            onDetectionsChange={handleDetectionsChange}
+                            showSuccess={showSuccess}
+                            showError={showError}
+                          />
+                        </div>
+                      ) : (
+                        /* VIEW MODE: Static display with overlays */
+                        <div className='relative w-full h-full'>
+                          {/* Display the actual thermal image */}
+                          <img 
+                            src={thermalAnalysisResult.maintenanceImageUrl || inspectionImage.imageUrl} 
+                            alt="Thermal Analysis"
+                            className='w-full h-full object-contain'
+                            onError={(e) => {
+                              // Fallback to original image if thermal image fails
+                              e.target.src = inspectionImage.imageUrl;
+                            }}
+                          />
                           
-                          return (
-                            <div
-                              key={index}
-                              className={`absolute border-2 pointer-events-none ${
-                                detection.isCritical ? 'border-red-500' : 'border-yellow-500'
-                              }`}
-                              style={calculatePosition()}
-                            >
-                              {/* Detection label */}
-                              <div className={`absolute -top-6 left-0 px-2 py-1 text-xs font-bold text-white rounded whitespace-nowrap z-10 ${
-                                detection.isCritical ? 'bg-red-500' : 'bg-yellow-500'
-                              }`}>
-                                {detection.label}
-                                {detection.temperatureCelsius && (
-                                  <span className='ml-1'>({detection.temperatureCelsius}°C)</span>
-                                )}
-                              </div>
+                          {/* Detection overlays */}
+                          {thermalAnalysisResult.detections?.map((detection, index) => {
+                            // Improved positioning calculation for object-contain images
+                            const calculatePosition = () => {
+                              const imageElement = document.querySelector('img[alt="Thermal Analysis"]');
+                              if (!imageElement) {
+                                // Fallback positioning
+                                return {
+                                  left: `${(detection.x / 640) * 100}%`,
+                                  top: `${(detection.y / 480) * 100}%`,
+                                  width: `${(detection.width / 640) * 100}%`,
+                                  height: `${(detection.height / 480) * 100}%`,
+                                };
+                              }
+
+                              // Get container and image dimensions
+                              const container = imageElement.parentElement;
+                              const containerRect = container.getBoundingClientRect();
+                              const naturalWidth = imageElement.naturalWidth || 640;
+                              const naturalHeight = imageElement.naturalHeight || 480;
                               
-                              {/* Confidence badge */}
-                              <div className={`absolute -bottom-5 right-0 px-1 py-0.5 text-xs text-white rounded z-10 ${
-                                detection.isCritical ? 'bg-red-600' : 'bg-yellow-600'
-                              }`}>
-                                {(detection.confidence * 100).toFixed(0)}%
+                              // Calculate how the image is scaled within its container (object-contain)
+                              const containerAspect = containerRect.width / containerRect.height;
+                              const imageAspect = naturalWidth / naturalHeight;
+                              
+                              let displayedWidth, displayedHeight, offsetX, offsetY;
+                              
+                              if (containerAspect > imageAspect) {
+                                // Container is wider than image aspect ratio
+                                displayedHeight = containerRect.height;
+                                displayedWidth = displayedHeight * imageAspect;
+                                offsetY = 0;
+                                offsetX = (containerRect.width - displayedWidth) / 2;
+                              } else {
+                                // Container is taller than image aspect ratio
+                                displayedWidth = containerRect.width;
+                                displayedHeight = displayedWidth / imageAspect;
+                                offsetX = 0;
+                                offsetY = (containerRect.height - displayedHeight) / 2;
+                              }
+                              
+                              // Scale detection coordinates to displayed image size
+                              const scaleX = displayedWidth / naturalWidth;
+                              const scaleY = displayedHeight / naturalHeight;
+                              
+                              // Calculate final position as percentage of container
+                              const left = ((detection.x * scaleX + offsetX) / containerRect.width) * 100;
+                              const top = ((detection.y * scaleY + offsetY) / containerRect.height) * 100;
+                              const width = (detection.width * scaleX / containerRect.width) * 100;
+                              const height = (detection.height * scaleY / containerRect.height) * 100;
+                              
+                              return {
+                                left: `${left}%`,
+                                top: `${top}%`,
+                                width: `${width}%`,
+                                height: `${height}%`,
+                              };
+                            };
+                            
+                            return (
+                              <div
+                                key={index}
+                                className={`absolute border-2 pointer-events-none ${
+                                  detection.isCritical ? 'border-red-500' : 'border-yellow-500'
+                                }`}
+                                style={calculatePosition()}
+                              >
+                                {/* Detection label */}
+                                <div className={`absolute -top-6 left-0 px-2 py-1 text-xs font-bold text-white rounded whitespace-nowrap z-10 ${
+                                  detection.isCritical ? 'bg-red-500' : 'bg-yellow-500'
+                                }`}>
+                                  {detection.label}
+                                  {detection.temperatureCelsius && (
+                                    <span className='ml-1'>({detection.temperatureCelsius}°C)</span>
+                                  )}
+                                </div>
+                                
+                                {/* Confidence badge */}
+                                <div className={`absolute -bottom-5 right-0 px-1 py-0.5 text-xs text-white rounded z-10 ${
+                                  detection.isCritical ? 'bg-red-600' : 'bg-yellow-600'
+                                }`}>
+                                  {(detection.confidence * 100).toFixed(0)}%
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                        
-                        {/* Analysis info overlay */}
-                        <div className='absolute top-2 right-2 bg-black bg-opacity-75 text-white px-3 py-2 rounded text-sm'>
-                          <div className='text-center font-bold'>Analysis Complete</div>
-                          <div className='text-xs'>Status: {thermalAnalysisResult.overallAssessment}</div>
-                          <div className='text-xs'>Score: {thermalAnalysisResult.anomalyScore?.toFixed(3)}</div>
-                          <div className='text-xs'>Detections: {thermalAnalysisResult.totalDetections || 0}</div>
+                            );
+                          })}
+                          
+                          {/* Analysis info overlay */}
+                          <div className='absolute top-2 right-2 bg-black bg-opacity-75 text-white px-3 py-2 rounded text-sm'>
+                            <div className='text-center font-bold'>Analysis Complete</div>
+                            <div className='text-xs'>Status: {thermalAnalysisResult.overallAssessment}</div>
+                            <div className='text-xs'>Score: {thermalAnalysisResult.anomalyScore?.toFixed(3)}</div>
+                            <div className='text-xs'>Detections: {thermalAnalysisResult.totalDetections || 0}</div>
+                          </div>
+                          
+                          <div className='absolute bottom-2 left-2 text-white text-xs bg-black bg-opacity-75 px-2 py-1 rounded'>
+                            {thermalAnalysisResult.analysisTimestamp ? 
+                              new Date(thermalAnalysisResult.analysisTimestamp).toLocaleString() : 
+                              new Date().toLocaleString()
+                            }
+                          </div>
                         </div>
-                        
-                        <div className='absolute bottom-2 left-2 text-white text-xs bg-black bg-opacity-75 px-2 py-1 rounded'>
-                          {thermalAnalysisResult.analysisTimestamp ? 
-                            new Date(thermalAnalysisResult.analysisTimestamp).toLocaleString() : 
-                            new Date().toLocaleString()
-                          }
-                        </div>
-                      </div>
+                      )
                     ) : inspectionImage && !thermalAnalysisResult ? (
                       <div className='relative w-full h-full'>
                         <img 
@@ -1203,26 +1331,11 @@ function InspectionDetailPage() {
                   </div>
                 )}
 
-                {thermalAnalysisResult && (
-                  <div>
+                {/* Detailed Analysis Results - Always show when analysis exists */}
+                {thermalAnalysisResult && !isEditMode && (
+                  <div className='mt-6'>
+                    <h3 className='text-md font-semibold text-gray-800 mb-3'>📊 Detailed Analysis Results</h3>
                     <ThermalAnalysisResults analysis={thermalAnalysisResult} />
-                    <div className='mt-4 flex space-x-2'>
-                      <button
-                        onClick={() => {
-                          setThermalAnalysisResult(null);
-                          setShowThermalAnalysis(true);
-                        }}
-                        className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors'
-                      >
-                        Analyze Again
-                      </button>
-                      <button
-                        onClick={() => setThermalAnalysisResult(null)}
-                        className='px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors'
-                      >
-                        Clear Results
-                      </button>
-                    </div>
                   </div>
                 )}
               </div>

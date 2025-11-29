@@ -157,5 +157,81 @@ export const thermalApi = {
   // Delete analysis
   deleteAnalysis: async (id) => {
     await axios.delete(`${THERMAL_API_URL}/${id}`);
+  },
+
+  // ============================================================
+  // Phase 4: Anomaly Management & Verification Endpoints
+  // ============================================================
+
+  // Get inspection results with detections (includes original image dimensions)
+  getInspectionResults: async (inspectionId) => {
+    try {
+      const response = await axios.get(`${THERMAL_API_URL}/inspection/${inspectionId}/results`);
+      return response.data;
+    } catch (error) {
+      console.error('Get inspection results error:', error);
+      throw new Error(error.response?.data?.message || 'Failed to load inspection results');
+    }
+  },
+
+  // Add new anomaly detection (manual annotation)
+  addAnomaly: async (anomalyData) => {
+    try {
+      const response = await axios.post('/api/anomalies', anomalyData);
+      return response.data;
+    } catch (error) {
+      console.error('Add anomaly error:', error);
+      throw new Error(error.response?.data?.message || 'Failed to add anomaly');
+    }
+  },
+
+  // Update existing anomaly (resize/move)
+  updateAnomaly: async (id, anomalyData) => {
+    try {
+      const response = await axios.put(`/api/anomalies/${id}`, anomalyData);
+      return response.data;
+    } catch (error) {
+      console.error('Update anomaly error:', error);
+      throw new Error(error.response?.data?.message || 'Failed to update anomaly');
+    }
+  },
+
+  // Soft delete anomaly (mark as false positive)
+  deleteAnomaly: async (id, deletedBy) => {
+    try {
+      const response = await axios.delete(`/api/anomalies/${id}`, {
+        params: { deletedBy }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Delete anomaly error:', error);
+      throw new Error(error.response?.data?.message || 'Failed to delete anomaly');
+    }
+  },
+
+  // Confirm specific anomaly (verify AI detection)
+  confirmAnomaly: async (id, confirmedBy) => {
+    try {
+      const response = await axios.put(`/api/anomalies/${id}/confirm`, null, {
+        params: { confirmedBy }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Confirm anomaly error:', error);
+      throw new Error(error.response?.data?.message || 'Failed to confirm anomaly');
+    }
+  },
+
+  // Verify entire analysis (complete review)
+  verifyAnalysis: async (analysisId, reviewedBy) => {
+    try {
+      const response = await axios.put(`${THERMAL_API_URL}/${analysisId}/verify`, null, {
+        params: { reviewedBy }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Verify analysis error:', error);
+      throw new Error(error.response?.data?.message || 'Failed to verify analysis');
+    }
   }
 };

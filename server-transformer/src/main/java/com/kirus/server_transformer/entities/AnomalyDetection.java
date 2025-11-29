@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -64,6 +66,7 @@ public class AnomalyDetection {
 
     // FR3.3: Preserve original AI prediction before human edits
     @Column(name = "original_ai_prediction", columnDefinition = "JSONB")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String originalAiPrediction; // Stores: {"x": 10, "y": 10, "width": 50, "height": 50}
 
     // FR3.1: Rich annotation status tracking (replaces is_false_positive)

@@ -71,6 +71,17 @@ public class MaintenanceRecordController {
     }
 
     /**
+     * Get maintenance record by inspection ID (alternative plural path)
+     * GET /api/maintenance-records/inspections/{inspectionId}
+     */
+    @GetMapping("/inspections/{inspectionId}")
+    public ResponseEntity<MaintenanceRecordResponse> getMaintenanceRecordByInspectionIdPlural(
+            @PathVariable Long inspectionId) {
+        MaintenanceRecordResponse response = maintenanceRecordService.getMaintenanceRecordByInspectionId(inspectionId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Get all maintenance records with pagination
      * GET /api/maintenance-records?page=0&size=10
      */
@@ -256,4 +267,3 @@ public class MaintenanceRecordController {
         }
     }
 }
-

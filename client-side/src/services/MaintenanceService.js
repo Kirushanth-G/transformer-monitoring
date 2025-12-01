@@ -5,7 +5,16 @@ const API_URL = '/api/maintenance-records';
 export const MaintenanceService = {
   // Records
   createRecord: (data) => axios.post(API_URL, data),
-  getRecordByInspection: (inspectionId) => axios.get(`${API_URL}/inspection/${inspectionId}`),
+  getRecordByInspection: async (inspectionId) => {
+    try {
+      return await axios.get(`${API_URL}/inspection/${inspectionId}`);
+    } catch (error) {
+      if (error?.response?.status === 404) {
+        return axios.get(`${API_URL}/inspections/${inspectionId}`);
+      }
+      throw error;
+    }
+  },
   updateRecord: (id, data) => axios.put(`${API_URL}/${id}`, data),
   finalizeRecord: (id) => axios.post(`${API_URL}/${id}/finalize`),
 

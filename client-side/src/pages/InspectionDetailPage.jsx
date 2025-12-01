@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
@@ -20,6 +20,10 @@ function InspectionDetailPage() {
   const navigate = useNavigate();
   const { notifications, removeNotification, showSuccess, showError } =
     useNotifications();
+  const showErrorRef = useRef(showError);
+  useEffect(() => {
+    showErrorRef.current = showError;
+  }, [showError]);
 
   const [inspection, setInspection] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -57,7 +61,7 @@ function InspectionDetailPage() {
       } catch (err) {
         if (err?.response?.status !== 404) {
           console.error('Error fetching maintenance record:', err);
-          showError?.('Failed to load maintenance record');
+          showErrorRef.current?.('Failed to load maintenance record');
         } else {
           setMaintenanceRecord(null);
         }
@@ -67,7 +71,7 @@ function InspectionDetailPage() {
     };
 
     fetchMaintenanceRecord();
-  }, [id, showError]);
+  }, [id]);
 
   const maintenanceFinalized = !!maintenanceRecord?.isFinalized;
   const reportCtaLabel = maintenanceRecord ? 'Continue Report' : 'Create Report';

@@ -106,9 +106,21 @@ public class MaintenanceRecordService {
     }
 
     public MaintenanceRecordResponse getMaintenanceRecordByInspectionId(Long inspectionId) {
-        MaintenanceRecord maintenanceRecord = maintenanceRecordRepository.findByInspectionId(inspectionId)
-                .orElseThrow(() -> new RuntimeException("Maintenance record not found for inspection: " + inspectionId));
-        return maintenanceRecordMapper.toResponse(maintenanceRecord);
+        // Validate that inspection exists
+        Inspection inspection = inspectionRepository.findById(inspectionId)
+                .orElseThrow(() -> new RuntimeException("Inspection not found with id: " + inspectionId));
+
+        // Return existing record if found, otherwise return empty default response
+        return maintenanceRecordRepository.findByInspectionId(inspectionId)
+                .map(maintenanceRecordMapper::toResponse)
+                .orElseGet(() -> {
+                    // Return a default empty response indicating no maintenance record exists yet
+                    MaintenanceRecordResponse emptyResponse = new MaintenanceRecordResponse();
+                    emptyResponse.setInspectionId(inspectionId);
+                    emptyResponse.setIsFinalized(false);
+                    emptyResponse.setElectricalReadings(List.of());
+                    return emptyResponse;
+                });
     }
 
     public Page<MaintenanceRecordSummaryDto> getAllMaintenanceRecords(Pageable pageable) {

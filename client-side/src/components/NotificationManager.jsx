@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
 import { CheckIcon, XIcon } from './ui/icons';
 
-function NotificationManager({ notifications, removeNotification }) {
+function NotificationManager({ notifications = [], removeNotification, onRemove }) {
+  const handleRemove = removeNotification || onRemove || (() => {});
+
   return (
     <div className='fixed top-4 right-6 z-50 flex flex-col space-y-2'>
       {/* <div className='space-y-2'></div> */}
@@ -9,7 +11,7 @@ function NotificationManager({ notifications, removeNotification }) {
         <Notification
           key={notification.id}
           notification={notification}
-          onClose={() => removeNotification(notification.id)}
+          onClose={() => handleRemove(notification.id)}
         />
       ))}
     </div>

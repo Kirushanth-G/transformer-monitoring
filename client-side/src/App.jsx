@@ -9,6 +9,7 @@ import TransformersPage from './pages/TransformersPage';
 import TransformerDetailPage from './pages/TransformerDetailPage';
 import InspectionDetailPage from './pages/InspectionDetailPage';
 import InspectionsPage from './pages/InspectionsPage';
+import MaintenanceReportPage from './pages/MaintenanceReportPage';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import Sidebar from './components/Sidebar';
@@ -53,7 +54,8 @@ function App() {
       <Routes>
         {/* Routes without main layout (sidebar + topbar) */}
         <Route path='/transformers/:id' element={<TransformerDetailPage />} />
-        <Route path='/inspections/:id' element={<InspectionDetailPage />} />
+  <Route path='/inspections/:id' element={<InspectionDetailPage />} />
+  <Route path='/inspections/:id/report' element={<MaintenanceReportPage />} />
 
         {/* Routes with main layout */}
         <Route

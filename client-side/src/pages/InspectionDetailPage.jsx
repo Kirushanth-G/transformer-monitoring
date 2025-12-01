@@ -13,6 +13,7 @@ import { displayValue, isNullValue } from '../utils/displayHelpers';
 import { thermalApi } from '../services/thermalApi';
 import { getAllTransformers } from '../api/transformerApi';
 import axios from '../api/axiosConfig';
+import { MaintenanceService } from '../services/MaintenanceService';
 
 function InspectionDetailPage() {
   const { id } = useParams();
@@ -41,6 +42,41 @@ function InspectionDetailPage() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [imageAnalysisHistory, setImageAnalysisHistory] = useState([]);
   const [loadingImageHistory, setLoadingImageHistory] = useState(false);
+
+  // Maintenance record state
+  const [maintenanceRecord, setMaintenanceRecord] = useState(null);
+  const [loadingMaintenanceRecord, setLoadingMaintenanceRecord] = useState(false);
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchMaintenanceRecord = async () => {
+      try {
+        setLoadingMaintenanceRecord(true);
+        const response = await MaintenanceService.getRecordByInspection(id);
+        setMaintenanceRecord(response.data || response);
+      } catch (err) {
+        if (err?.response?.status !== 404) {
+          console.error('Error fetching maintenance record:', err);
+          showError?.('Failed to load maintenance record');
+        } else {
+          setMaintenanceRecord(null);
+        }
+      } finally {
+        setLoadingMaintenanceRecord(false);
+      }
+    };
+
+    fetchMaintenanceRecord();
+  }, [id, showError]);
+
+  const maintenanceFinalized = !!maintenanceRecord?.isFinalized;
+  const reportCtaLabel = maintenanceRecord ? 'Continue Report' : 'Create Report';
+
+  const navigateToReport = () => navigate(`/inspections/${id}/report`);
+  const navigateToReportAndPrint = () =>
+    navigate(`/inspections/${id}/report`, {
+      state: { autoPrint: true }
+    });
   
   // Thermal annotation editor state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -697,6 +733,30 @@ function InspectionDetailPage() {
                   >
                     {displayValue(inspection.status)}
                   </span>
+                  {maintenanceFinalized ? (
+                    <>
+                      <button
+                        onClick={navigateToReport}
+                        className='w-full rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 sm:w-auto'
+                      >
+                        See Report
+                      </button>
+                      <button
+                        onClick={navigateToReportAndPrint}
+                        className='w-full rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 sm:w-auto'
+                      >
+                        Print Report
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={navigateToReport}
+                      disabled={loadingMaintenanceRecord}
+                      className='w-full rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
+                    >
+                      {loadingMaintenanceRecord ? 'Loading…' : reportCtaLabel}
+                    </button>
+                  )}
                   <button
                     onClick={() => navigate('/inspections')}
                     className='w-full rounded-md bg-blue-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-blue-300 sm:w-auto'
